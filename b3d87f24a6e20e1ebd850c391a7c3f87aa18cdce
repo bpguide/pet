@@ -1,0 +1,41 @@
+src/main/index.ts
+  c9240fd759352aa7 21,137-141,157,195
+src/shared/save.ts
+  c9240fd759352aa7 116-119
+src/main/agent.ts
+  c9240fd759352aa7 1-52
+src/preload/index.ts
+  c9240fd759352aa7 91-94
+src/renderer/ui/talk.ts
+  c9240fd759352aa7 71-72,85
+src/shared/ipc.ts
+  c9240fd759352aa7 55,58-65,274-275
+src/renderer/ui/setup.ts
+  c9240fd759352aa7 312-317
+src/renderer/pet/pet.ts
+  c9240fd759352aa7 234-237,252-253,255
+src/renderer/main.ts
+  c9240fd759352aa7 438-445
+src/shared/save-logic.ts
+  c9240fd759352aa7 102-103,189-190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "b3d87f24a6e20e1ebd850c391a7c3f87aa18cdce",
+  "prompts": {
+    "c9240fd759352aa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cb9c169c-fced-4ea4-8d9c-52c203f84e6d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "wupengpeng <wupengpeng@didiglobal.com>",
+      "messages": [],
+      "total_additions": 109,
+      "total_deletions": 6,
+      "accepted_lines": 108,
+      "overriden_lines": 0
+    }
+  }
+}
