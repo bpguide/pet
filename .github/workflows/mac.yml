@@ -1,0 +1,25 @@
+name: mac
+
+on: workflow_dispatch
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run dist
+        env:
+          # No Apple signing identity in CI: produce unsigned dmgs.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qqpet-mac
+          path: dist/*.dmg
+          if-no-files-found: error
