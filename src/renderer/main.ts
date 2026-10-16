@@ -435,6 +435,14 @@ window.qqpet.onClipboard((text) => {
   speak({ s: text.length > CLIP_MAX ? `${text.slice(0, CLIP_MAX)}…` : text, b: '当前复制的文字', now: true, ai: clipAsk(text) }, 'speak')
 })
 
+window.qqpet.onAgentNotify?.((n) => {
+  if (!save.havePet || !save.settings.agentNotify) return
+  const where = n.project ? `「${n.project}」` : ''
+  const message = n.message.length > CLIP_MAX ? `${n.message.slice(0, CLIP_MAX)}…` : n.message
+  const s = n.kind === 'stop' ? `[host]，${where}的任务做完啦~` : `[host]，Claude 在等你操作${where}：${message || '快去看看吧'}`
+  speak({ s, b: '知道了', now: true, ai: false, loud: true, sticky: save.settings.agentSticky }, 'speak')
+})
+
 // Friend LAN presence moved into initLanVisit (one registration per channel).
 initLanVisit()
 initVoice()

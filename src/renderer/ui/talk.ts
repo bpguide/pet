@@ -68,7 +68,8 @@ function place(): void {
   el.style.top = `${top}px`
 }
 
-export async function say(text: string, buttons: string[], onButton: (() => void)[] = []): Promise<void> {
+/** A `sticky` bubble stays until a button is clicked or another bubble replaces it. */
+export async function say(text: string, buttons: string[], onButton: (() => void)[] = [], sticky = false): Promise<void> {
   actions = onButton
   shown = text
   labels = buttons
@@ -81,7 +82,7 @@ export async function say(text: string, buttons: string[], onButton: (() => void
   el.style.visibility = 'visible'
   speak(text, buttons)
   clearTimeout(hideTimer)
-  hideTimer = window.setTimeout(expire, SHOW_MS)
+  if (!sticky) hideTimer = window.setTimeout(expire, SHOW_MS)
 }
 
 /** Swaps the text of a bubble still showing `from`, keeping its buttons; `say` must have finished. */

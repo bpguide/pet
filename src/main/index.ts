@@ -18,6 +18,7 @@ import { LanNode, persistedLanId } from './lan'
 import { VisitQueue } from './visit-queue'
 import { DEFAULT_HOTKEY, parseHotkey, watchHotkey, type KeyWatcher } from './hotkey'
 import { preloadAsr, transcribe } from './asr'
+import { startAgent, stopAgent } from './agent'
 
 // A test sidecar (QQPET_USER_DATA) runs beside the real pet: own save, own id, own lock.
 if (process.env.QQPET_USER_DATA) app.setPath('userData', process.env.QQPET_USER_DATA)
@@ -133,6 +134,11 @@ app.whenReady().then(() => {
     talkKey = undefined
   }
   if (getSave().settings.voice) startVoice()
+  const watchAgent = (on: boolean): void => {
+    if (!on) return stopAgent()
+    startAgent((n) => win.isDestroyed() || win.webContents.send(IPC.agentNotify, n))
+  }
+  watchAgent(getSave().settings.agentNotify)
   let lanOn = false
   const startLan = (): void => {
     if (lanOn || !getSave().settings.lan || !getSave().havePet) return
@@ -148,6 +154,7 @@ app.whenReady().then(() => {
   app.on('before-quit', () => {
     tray.destroy()
     lan.stop()
+    stopAgent()
   })
   ipcMain.on(IPC.trayMenu, (event, items: TrayMenuItem[]) => {
     if (event.sender !== win.webContents) return
@@ -185,6 +192,7 @@ app.whenReady().then(() => {
       }
     }
     if (patch.settings?.voice !== undefined) (patch.settings.voice ? startVoice : stopVoice)()
+    if (patch.settings?.agentNotify !== undefined) watchAgent(patch.settings.agentNotify)
   })
   ipcMain.on(IPC.resetPet, (_e, sex?: Sex) => {
     resetSave(sex)

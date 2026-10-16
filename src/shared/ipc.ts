@@ -52,7 +52,17 @@ export const IPC = {
   voiceAudio: 'voice:audio',
   voicePart: 'voice:part',
   voicePartial: 'voice:partial',
+  agentNotify: 'agent:notify',
 } as const
+
+/** A Claude Code hook: `stop` when a task finished, `notify` when it waits for the user. */
+export interface AgentNotice {
+  kind: 'stop' | 'notify'
+  /** Last segment of the session's working directory; may be empty. */
+  project: string
+  /** Notification text from Claude Code; empty for `stop`. */
+  message: string
+}
 
 export interface Point {
   x: number
@@ -261,4 +271,6 @@ export interface QQPetApi {
   voicePart?(samples: Float32Array): void
   /** What has been heard so far; keeps changing until the final transcript. */
   onVoicePartial?(listener: (text: string) => void): void
+  /** A Claude Code hook reached the pet, while the agentNotify setting is on. Desktop only. */
+  onAgentNotify?(listener: (n: AgentNotice) => void): void
 }

@@ -113,6 +113,10 @@ export interface Settings {
   roam: boolean
   /** Friend LAN presence and visits; off by default. */
   lan: boolean
+  /** Claude Code hooks (task done, waiting for the user) make the pet speak, even in do-not-disturb. Off by default. */
+  agentNotify: boolean
+  /** Those bubbles stay until clicked instead of fading after a few seconds. */
+  agentSticky: boolean
   /** The talk key (double-tap left Alt, then hold) feeds local speech-to-text. */
   voice: boolean
   /** Pressing the pet shows the action bar. On by default. */

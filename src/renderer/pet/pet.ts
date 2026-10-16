@@ -231,6 +231,10 @@ interface Say {
    * `IDLE` waits for the model (the stock line is only a hint), `false` keeps the text.
    */
   ai?: string | false
+  /** Shown even in do-not-disturb. */
+  loud?: boolean
+  /** The bubble stays until clicked. */
+  sticky?: boolean
 }
 
 /** Shows a bubble, optionally together with an action that it waits for. Do-not-disturb drops only the bubble. */
@@ -245,10 +249,10 @@ export function speak(t: Say, action?: string, hooks: { start?: () => void; end?
   text = text.replace(/\[host]/g, info.host)
   const onOk = hooks.ok ? [hooks.ok] : []
   const show = (): void => {
-    if (!save.settings.quiet) {
-      if (t.ai === IDLE) void rephrase(text, t.ai).then((s) => void say(s ?? text, [button], onOk))
+    if (!save.settings.quiet || t.loud) {
+      if (t.ai === IDLE) void rephrase(text, t.ai).then((s) => void say(s ?? text, [button], onOk, t.sticky))
       else {
-        const said = say(text, [button], onOk)
+        const said = say(text, [button], onOk, t.sticky)
         if (t.ai !== false) void Promise.all([rephrase(text, t.ai), said]).then(([s]) => s && void retell(text, s))
       }
     }

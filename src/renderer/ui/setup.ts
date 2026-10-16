@@ -309,6 +309,12 @@ const TABS: { label: string; options: Option[] }[] = [
     options: [
       { type: 'radio', label: '实时监听播报剪切板', title: '复制文字后，宠物会把它念出来', on: () => s.clip, run: () => toggleWatch('clipboardWatch', 'clip') },
       { type: 'radio', label: '留意前台在用的软件（仅电脑，默认关）', title: '同一软件开太久，闲聊时可能会提起。不读窗口内容。', on: () => s.watchApp, run: () => toggleWatch('frontWatch', 'watchApp') },
+      ...(window.qqpet.onAgentNotify
+        ? [
+            { type: 'radio' as const, label: 'Claude Code 任务提醒（仅电脑，默认关）', title: '任务完成或需要你操作时提醒，免打扰时也会提醒。需在 Claude Code 的 Stop / Notification hook 里把输入 POST 到 http://127.0.0.1:17321/notify', on: () => s.agentNotify, run: () => update('settings', { agentNotify: !s.agentNotify }) },
+            { type: 'radio' as const, label: '提醒气泡一直显示，点了才消失', title: '关闭时提醒气泡和平时一样几秒后消失', on: () => s.agentSticky, run: () => update('settings', { agentSticky: !s.agentSticky }) },
+          ]
+        : []),
     ],
   },
   {

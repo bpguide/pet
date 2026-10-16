@@ -88,6 +88,10 @@ const api: QQPetApi = {
     ipcRenderer.removeAllListeners(IPC.voiceError)
     ipcRenderer.on(IPC.voiceError, (_e, message) => listener(message))
   },
+  onAgentNotify: (listener) => {
+    ipcRenderer.removeAllListeners(IPC.agentNotify)
+    ipcRenderer.on(IPC.agentNotify, (_e, n) => listener(n))
+  },
 }
 
 contextBridge.exposeInMainWorld('qqpet', api)
