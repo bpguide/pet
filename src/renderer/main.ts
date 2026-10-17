@@ -19,6 +19,7 @@ import { initLanVisit } from './ui/lan-visit'
 import { initVoice } from './ui/voice'
 import { resizePetPosition } from '../shared/layout'
 import agentSound from './assets/agent-notify.wav'
+import { feedTokens } from './pet/agent-growth'
 
 let lastPlatformError = ''
 let lastPlatformErrorAt = -Infinity
@@ -181,7 +182,9 @@ function updateCursor(p: DesktopCursor): void {
   const el = document.elementFromPoint(p.x - Number(cropX), p.y - Number(cropY))
   const root = el?.getRootNode()
   const host = root instanceof ShadowRoot ? root.host : el
-  const hit = dragging || overPet || host?.closest('[data-hit]') != null
+  // #pet carries data-hit too, but overPet alone decides for the pet box (a peek covers only part of it).
+  const panel = host?.closest('[data-hit]')
+  const hit = dragging || overPet || (panel != null && panel !== petEl)
   // The menu closes once the cursor rests on the desktop; it may still be on the tray, outside the window.
   const inside = p.x >= 0 && p.y >= 0 && p.x < innerWidth && p.y < innerHeight
   if (!hit && inside) {
@@ -459,7 +462,12 @@ window.qqpet.onAgentNotify?.((n) => {
   if (!save.havePet || !save.settings.agentNotify) return
   const where = n.project ? `「${n.project}」` : ''
   const message = n.message.length > CLIP_MAX ? `${n.message.slice(0, CLIP_MAX)}…` : n.message
-  const s = n.kind === 'stop' ? `[host]，${where}的任务做完啦~` : `[host]，Claude 在等你操作${where}：${message || '快去看看吧'}`
+  const gain = n.kind === 'stop' && n.tokens > 0 ? feedTokens(n.tokens) : { growth: 0, intel: 0 }
+  const grew = [gain.growth && `${gain.growth}成长值`, gain.intel && `${gain.intel}智力`].filter(Boolean).join('、')
+  const s =
+    n.kind === 'stop'
+      ? `[host]，${where}的任务做完啦~${grew ? `我也跟着长了${grew}` : ''}`
+      : `[host]，Claude 在等你操作${where}：${message || '快去看看吧'}`
   speak({ s, b: '知道了', now: true, ai: false, loud: true, sticky: save.settings.agentSticky }, 'speak')
   // Muted with the pet's voices; a blocked or failed play never stops the bubble.
   if (save.settings.sound) void new Audio(agentSound).play().catch(() => {})

@@ -62,6 +62,8 @@ export interface AgentNotice {
   project: string
   /** Notification text from Claude Code; empty for `stop`. */
   message: string
+  /** Output tokens the session produced since its last `stop` while the pet ran; 0 for `notify`. */
+  tokens: number
 }
 
 export interface Point {
