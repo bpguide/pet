@@ -14,7 +14,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run dist
+      # Apple silicon only: dmg:arm64 replaces the arm64 + x64 targets of electron-builder.yml.
+      - run: npm run typecheck && npx electron-vite build && npx electron-builder --mac dmg:arm64 --publish never
         env:
           # No Apple signing identity in CI: produce unsigned dmgs.
           CSC_IDENTITY_AUTO_DISCOVERY: false
