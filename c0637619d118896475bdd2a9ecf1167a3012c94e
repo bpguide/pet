@@ -1,0 +1,25 @@
+src/main/window.ts
+  c9240fd759352aa7 1,42-43,158-160
+src/renderer/ui/face.ts
+  c9240fd759352aa7 61-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "c0637619d118896475bdd2a9ecf1167a3012c94e",
+  "prompts": {
+    "c9240fd759352aa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cb9c169c-fced-4ea4-8d9c-52c203f84e6d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "bpguide <1335966938@qq.com>",
+      "messages": [],
+      "total_additions": 21,
+      "total_deletions": 2,
+      "accepted_lines": 21,
+      "overriden_lines": 0
+    }
+  }
+}
