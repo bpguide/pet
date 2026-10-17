@@ -28,6 +28,9 @@ function patchCentral(file, at, write) {
 test('versions compare numerically', () => {
   assert.ok(compareVersion('0.6.10', '0.6.9') > 0)
   assert.equal(compareVersion('0.6.7-beta', '0.6.7'), 0)
+  assert.ok(compareVersion('0.7.0-beta.2', '0.7.0-beta.1') > 0)
+  assert.ok(compareVersion('0.7.0-beta.10', '0.7.0-beta.9') > 0)
+  assert.equal(compareVersion('0.7.0-beta.1', '0.7.0-beta.1'), 0)
   assert.ok(compareVersion('1.0.0', '0.99.99') > 0)
 })
 

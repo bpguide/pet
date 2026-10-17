@@ -40,6 +40,15 @@ const DAILY: Record<TimedType, { c: string; action: string; extra: number; pause
   background: { c: 'pay', action: 'speak', extra: 0 },
 }
 
+/** Uses a food/clean/toy good without any words, for time the pet spent unattended. */
+export function useItemQuietly(g: Good): void {
+  const d = DAILY[g.type as TimedType]
+  if (!takeGood(g)) return
+  if (g.useTimeing) startTimed(g as Good & { type: TimedType })
+  apply(g, d.extra)
+  if (d.task) addCount(d.task)
+}
+
 /**
  * Uses one of a good. `free` skips the inventory (the doctor already charged
  * for it). The good is taken when its animation starts, so a use that is

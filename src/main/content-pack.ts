@@ -52,6 +52,24 @@ export function compareVersion(a: string, b: string): number {
   const pa = a.split(/[+-]/)[0].split('.').map(Number)
   const pb = b.split(/[+-]/)[0].split('.').map(Number)
   for (let i = 0; i < 3; i++) if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) - (pb[i] ?? 0)
+  // A pre-release still equals its release (a beta shell counts as the release), but two pre-releases of one release are ordered.
+  const sa = a.match(/-([^+]+)/)?.[1]
+  const sb = b.match(/-([^+]+)/)?.[1]
+  if (sa === undefined || sb === undefined) return 0
+  const qa = sa.split('.')
+  const qb = sb.split('.')
+  for (let i = 0; i < Math.max(qa.length, qb.length); i++) {
+    const x = qa[i]
+    const y = qb[i]
+    if (x === y) continue
+    if (x === undefined) return -1
+    if (y === undefined) return 1
+    const nx = /^\d+$/.test(x)
+    const ny = /^\d+$/.test(y)
+    if (nx && ny) return Number(x) - Number(y)
+    if (nx !== ny) return nx ? -1 : 1
+    return x < y ? -1 : 1
+  }
   return 0
 }
 
