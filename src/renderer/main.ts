@@ -143,6 +143,8 @@ let interactive = false
 let out = false
 /** A cursor overshooting the menu edge, or crossing to a submenu, may come back before this. */
 const MENU_LEAVE_MS = 300
+/** Share of the pet box the Hide_left/right clips draw, measured from the screen edge (about a quarter, plus margin). */
+const PEEK = 0.3
 let menuLeave = 0
 const syncDesktop = (p: DesktopCursor): boolean => {
   const area = p.desktop
@@ -169,7 +171,11 @@ function updateCursor(p: DesktopCursor): void {
   cursor.y = p.y
   // The pet box is the hit target. elementFromPoint misses Ruffle's shadow canvas,
   // so the OS arrow shows until we also test the box itself.
-  const overPet = !petEl.hidden && !save.settings.hidden && p.x >= info.lastX && p.x < info.lastX + size && p.y >= info.lastY && p.y < info.lastY + size
+  // A peeking pet shows only the sliver by the screen edge; the rest of its box must not catch clicks.
+  const pose = machine.pose.a
+  const left = pose === 'hideright' ? info.lastX + size * (1 - PEEK) : info.lastX
+  const right = pose === 'hideleft' ? info.lastX + size * PEEK : info.lastX + size
+  const overPet = !petEl.hidden && !save.settings.hidden && p.x >= left && p.x < right && p.y >= info.lastY && p.y < info.lastY + size
   // The cursor is in page coordinates; a cropped page (HarmonyOS) is shifted by the crop.
   const { cropX = 0, cropY = 0 } = document.documentElement.dataset
   const el = document.elementFromPoint(p.x - Number(cropX), p.y - Number(cropY))
