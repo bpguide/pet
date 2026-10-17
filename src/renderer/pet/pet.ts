@@ -9,7 +9,7 @@ import { pickCare } from './care'
 import { IDLE, rephrase } from './ai'
 import { dateTalk, festival, greeting, loadCalendar } from './calendar'
 import { listGoods, tickTimed } from './goods'
-import { doctor, useItem } from './items'
+import { doctor, useItem, useItemQuietly } from './items'
 import { deliverMails } from './mail'
 import { Machine, type Pose } from './machine'
 import { rand } from './rand'
@@ -350,20 +350,27 @@ function tick(): void {
     addInfo('onlineDataTime', minutes)
     addInfo('onLineTime', minutes)
     tickGift(minutes)
-    // Work, study and travel wear the pet out faster.
-    const extra = busy() ? 1 : 0
-    const moodRate = rand(1, 2) + extra
-    // Growth only counts the minutes the mood lasted; an activity stops when it runs out.
-    const grown = Math.min(minutes, info.mood / moodRate)
-    if (grown < minutes) {
-      const stopped = stopTask()
-      if (stopped) speak({ c: 'state', s: MOOD_OUT[stopped], now: true }, 'speak')
+    // A long gap (locked screen, sleep) is replayed in minute steps so a sweetheart pet keeps tending itself meanwhile.
+    const steps = info.sweetHeart ? Math.min(Math.max(Math.ceil(minutes), 1), 2880) : 1
+    const dt = minutes / steps
+    let grown = 0
+    for (let i = 0; i < steps; i++) {
+      // Work, study and travel wear the pet out faster.
+      const extra = busy() ? 1 : 0
+      const moodRate = rand(1, 2) + extra
+      // Growth only counts the minutes the mood lasted; an activity stops when it runs out.
+      const g = Math.min(dt, info.mood / moodRate)
+      if (g < dt) {
+        const stopped = stopTask()
+        if (stopped) speak({ c: 'state', s: MOOD_OUT[stopped], now: true }, 'speak')
+      }
+      setInfo('mood', Math.max(info.mood - moodRate * dt, 0))
+      setInfo('hunger', Math.max(info.hunger - (rand(2, 3) + extra) * dt, 0))
+      setInfo('clean', Math.max(info.clean - (rand(2, 3) + extra) * dt, 0))
+      addInfo('growth', +(growthPerMinute() * g).toFixed(8))
+      grown += g
+      if (info.sweetHeart) selfCare(i < steps - 1)
     }
-    setInfo('mood', Math.max(info.mood - moodRate * minutes, 0))
-    setInfo('hunger', Math.max(info.hunger - (rand(2, 3) + extra) * minutes, 0))
-    setInfo('clean', Math.max(info.clean - (rand(2, 3) + extra) * minutes, 0))
-    addInfo('growth', +(growthPerMinute() * grown).toFixed(8))
-    if (info.sweetHeart) selfCare()
     for (const type of tickTimed(grown)) speak({ c: 'state', s: `${type}Over`, now: true }, 'speak')
     advanceTask(grown)
   }
@@ -379,13 +386,14 @@ const NEEDS = [
 ] as const
 
 /** Sweetheart: the pet tends its first low need it has a good for, with the good that wastes least (#40). */
-function selfCare(): void {
+function selfCare(quiet = false): void {
   for (const need of NEEDS) {
     const max = save.petComputedlInfo[`${need.stat}Max`]
     if (info[need.stat] / max >= 0.6) continue
     const g = pickCare(listGoods(need.type, 1, Number.MAX_SAFE_INTEGER).list, need.stat, max - info[need.stat])
     if (!g) continue
-    useItem(g, false, `[host]，我可以自己${need.act}哦！~~使用了：${g.name}`)
+    if (quiet) useItemQuietly(g)
+    else useItem(g, false, `[host]，我可以自己${need.act}哦！~~使用了：${g.name}`)
     return
   }
 }
