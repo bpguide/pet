@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, screen } from 'electron'
 import { spawn } from 'node:child_process'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -39,7 +39,8 @@ export function createPetWindow(): BrowserWindow {
   win.setAlwaysOnTop(true, 'screen-saver')
   // Full-screen apps hide the pet: macOS keeps it off full-screen spaces, and
   // Linux window managers stack a focused full-screen window above it.
-  win.setVisibleOnAllWorkspaces(true)
+  // The dock is already hidden: transforming the process type would turn it back into a foreground app with a dock icon.
+  win.setVisibleOnAllWorkspaces(true, { skipTransformProcessType: true })
   // Linux starts with an empty input shape instead; the page sets the real one (#45).
   if (process.platform === 'linux') win.setShape([{ x: 0, y: 0, width: 0, height: 0 }])
   else win.setIgnoreMouseEvents(true)
@@ -154,5 +155,8 @@ export function openGameWindow(swf: string, parent?: BrowserWindow): BrowserWind
   win.webContents.on('will-navigate', (e) => e.preventDefault())
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   void win.loadURL(`${PAGES}/game.html?swf=${encodeURIComponent(swf)}`)
+  // Without a dock icon the app is not activated by a new window, so the keyboard would stay with the previous app.
+  if (process.platform === 'darwin') app.focus({ steal: true })
+  win.focus()
   return win
 }

@@ -58,6 +58,21 @@ export function clearFacePoints(): void {
 if (!touch) petEl.addEventListener('pointerenter', () => {
   timer = window.setTimeout(showFacePoints, HOVER_MS)
 })
+// A pet that was busy or peeking when the cursor arrived gets no second pointerenter while the cursor stays,
+// so check again once it settles (also after each poke). The cursor feed, not :hover, as in talk.ts.
+if (!touch) {
+  let over = false
+  let held = false
+  window.qqpet.onCursor((p) => {
+    const r = petEl.getBoundingClientRect()
+    over = p.x >= r.left && p.x < r.right && p.y >= r.top && p.y < r.bottom
+  })
+  petEl.addEventListener('pointerdown', () => (held = true))
+  for (const ev of ['pointerup', 'pointercancel'] as const) addEventListener(ev, () => (held = false))
+  setInterval(() => {
+    if (over && !held && !petEl.hidden && !layer.childElementCount && machine.pose.a === 'normal') showFacePoints()
+  }, HOVER_MS)
+}
 // Touch taps are handled by the shared pet gesture path, including native hosts.
 for (const ev of touch ? (['pointerdown'] as const) : (['pointerleave', 'pointerdown'] as const)) {
   petEl.addEventListener(ev, (e) => {
