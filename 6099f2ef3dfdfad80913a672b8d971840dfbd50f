@@ -1,0 +1,29 @@
+src/shared/ipc.ts
+  c9240fd759352aa7 65-66
+src/renderer/main.ts
+  c9240fd759352aa7 22,185-187,465-470
+src/main/agent.ts
+  c9240fd759352aa7 1,12-52,70,76-90
+src/renderer/pet/agent-growth.ts
+  c9240fd759352aa7 1-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "6099f2ef3dfdfad80913a672b8d971840dfbd50f",
+  "prompts": {
+    "c9240fd759352aa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cb9c169c-fced-4ea4-8d9c-52c203f84e6d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "bpguide <1335966938@qq.com>",
+      "messages": [],
+      "total_additions": 108,
+      "total_deletions": 8,
+      "accepted_lines": 108,
+      "overriden_lines": 0
+    }
+  }
+}
