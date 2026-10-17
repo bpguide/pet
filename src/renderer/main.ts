@@ -18,6 +18,7 @@ import { windowView } from './ui/window-view'
 import { initLanVisit } from './ui/lan-visit'
 import { initVoice } from './ui/voice'
 import { resizePetPosition } from '../shared/layout'
+import agentSound from './assets/agent-notify.wav'
 
 let lastPlatformError = ''
 let lastPlatformErrorAt = -Infinity
@@ -196,6 +197,16 @@ function updateCursor(p: DesktopCursor): void {
   window.qqpet.setClickThrough(!hit)
 }
 window.qqpet.onCursor(updateCursor)
+// The cursor feed only fires when the cursor moves. A pet that walks or snaps away from a resting cursor
+// must hit-test again, or its old spot keeps swallowing clicks. Once per frame, outside the setInfo call.
+let rehit = 0
+onInfoChange((key) => {
+  if (key !== 'lastX' && key !== 'lastY' && key !== 'growth') return
+  rehit ||= requestAnimationFrame(() => {
+    rehit = 0
+    if (!dragging) updateCursor(cursor)
+  })
+})
 
 // Linux: the window takes the mouse only over the pet and the [data-hit] panels (#45). A hit root may be a
 // zero-sized anchor with overflowing children (the pet toolbar), so the children count too.
@@ -444,6 +455,8 @@ window.qqpet.onAgentNotify?.((n) => {
   const message = n.message.length > CLIP_MAX ? `${n.message.slice(0, CLIP_MAX)}…` : n.message
   const s = n.kind === 'stop' ? `[host]，${where}的任务做完啦~` : `[host]，Claude 在等你操作${where}：${message || '快去看看吧'}`
   speak({ s, b: '知道了', now: true, ai: false, loud: true, sticky: save.settings.agentSticky }, 'speak')
+  // Muted with the pet's voices; a blocked or failed play never stops the bubble.
+  if (save.settings.sound) void new Audio(agentSound).play().catch(() => {})
 })
 
 // Friend LAN presence moved into initLanVisit (one registration per channel).
