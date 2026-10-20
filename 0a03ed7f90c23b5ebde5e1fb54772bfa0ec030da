@@ -1,0 +1,131 @@
+src/ios/bridge.ts
+  c9240fd759352aa7 2,413
+src/renderer/ui/setup.ts
+  c9240fd759352aa7 4,29-65,261-266,299-305,322,331-344,355-360,371-380
+src/main/tray.ts
+  c9240fd759352aa7 16,32-34
+src/main/webhook.ts
+  c9240fd759352aa7 1-73
+tools/qqfarm/src/com/MyFarm/control/Control.as
+  c9240fd759352aa7 7,59-62,106-109
+src/shared/ai.ts
+  c9240fd759352aa7 31-36
+src/renderer/pet/store.ts
+  c9240fd759352aa7 77-84
+.github/workflows/build.yml
+  c9240fd759352aa7 12,155-157,163-165,176
+README.md
+  c9240fd759352aa7 36-37,94,102,121-134
+src/renderer/ui/community.ts
+  c9240fd759352aa7 2,594-597,599,656-657,746,754
+tools/qqfarm/build.mjs
+  c9240fd759352aa7 5-6,20-23,25-27,29-32
+tools/qqfarm/src/com/MyFarm/Store/MyStore.as
+  c9240fd759352aa7 216,220-249
+electron.vite.config.ts
+  c9240fd759352aa7 27-28
+src/renderer/pet/calendar.ts
+  c9240fd759352aa7 35-55,60-78,81-84
+src/renderer/ui/diudiule.ts
+  c9240fd759352aa7 2,38
+src/harmony/bridge.ts
+  c9240fd759352aa7 5,247
+scripts/pack-content.mjs
+  c9240fd759352aa7 32-38
+tools/qqfarm/src/com/MyFarm/view/InstallFace.as
+  c9240fd759352aa7 14,126,128-130,179-180,203,208-243,380-382,397-401,411-414
+scripts/tests/pet-drag.test.mjs
+  c9240fd759352aa7 30-35,57,60,81-85,93-94,105,122-123,137,152-154,479-538
+src/renderer/pet/fishing.ts
+  c9240fd759352aa7 3,172,199
+src/shared/ipc.ts
+  c9240fd759352aa7 3,17,43,49-50,53-59,114-115,197-203,245-246,274-275,290-293,298-305
+tools/qqfarm/src/com/MyFarm/Store/view/ShowBox.as
+  c9240fd759352aa7 199-200,204
+scripts/tests/tray-state.test.mjs
+  c9240fd759352aa7 15,36,48,92-106,109-113,118,124,134-139
+src/renderer/swf/player.ts
+  c9240fd759352aa7 169,363,366-369,416
+src/renderer/ui/webhook.ts
+  c9240fd759352aa7 1-33
+tools/qqfarm/props-src/com/UIComponents/ScrollBar/SaltedFishScrollBar.as
+  c9240fd759352aa7 1-300
+tools/qqfarm/src/com/MyFarm/control/TitleControl.as
+  c9240fd759352aa7 102,107,158-159,174-177,191,282-286,288-289,291,301,308,310-318,371-372,374,376
+src/renderer/pet/jobs.ts
+  c9240fd759352aa7 17,105
+src/renderer/ui/state.ts
+  c9240fd759352aa7 162,165,179-182,185-188,194,205-207,219-222,227
+package.json
+  c9240fd759352aa7 11
+scripts/tests/tray-menu.test.mjs
+  c9240fd759352aa7 143
+src/renderer/pet/mail.ts
+  c9240fd759352aa7 5,45
+src/preload/index.ts
+  c9240fd759352aa7 19,51-54,72-74,76,79-85
+src/renderer/pet/said.ts
+  c9240fd759352aa7 1-35
+src/renderer/ui/chat.ts
+  c9240fd759352aa7 2,5-7,17,19-36,39,41-43,47,49-50,53-60,82-87,91-98,142-183,185-239,247,253-273,275,277-294,361-362
+src/renderer/ui/fishing.ts
+  c9240fd759352aa7 98-107
+src/renderer/ui/games.ts
+  c9240fd759352aa7 3,23,27
+src/renderer/ui/smallgame.ts
+  c9240fd759352aa7 2,100-101
+src/renderer/global.d.ts
+  c9240fd759352aa7 52-53
+src/shared/websearch.ts
+  c9240fd759352aa7 1-126
+tools/qqfarm/src/com/MyFarm/control/ToolsBarControl.as
+  c9240fd759352aa7 4,19-21,26-30,71,74-76
+scripts/tests/multi-monitor.test.mjs
+  c9240fd759352aa7 196-198
+src/main/memory.ts
+  c9240fd759352aa7 1-84
+src/renderer/pet/items.ts
+  c9240fd759352aa7 7,44-53,81-84,89-94,101
+scripts/tests/farm-ui.test.mjs
+  c9240fd759352aa7 1-280
+scripts/tests/webhook.test.mjs
+  c9240fd759352aa7 1-32
+src/renderer/pet/ai.ts
+  c9240fd759352aa7 2,30,67-71
+src/renderer/ui/mstx.ts
+  c9240fd759352aa7 9-54,66,72
+src/renderer/ui/task.ts
+  c9240fd759352aa7 16-30,36,38-39
+scripts/tests/community-volume.test.mjs
+  c9240fd759352aa7 1-93
+src/android/bridge.ts
+  c9240fd759352aa7 6,244
+src/renderer/ui/farm.ts
+  c9240fd759352aa7 1,71-72,95
+src/renderer/ui/css/task.css
+  c9240fd759352aa7 13-20
+src/shared/webhook.ts
+  c9240fd759352aa7 1-61
+tools/qqfarm/props-src/ItemBg.as
+  c9240fd759352aa7 1-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.20",
+  "base_commit_sha": "0a03ed7f90c23b5ebde5e1fb54772bfa0ec030da",
+  "prompts": {
+    "c9240fd759352aa7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cb9c169c-fced-4ea4-8d9c-52c203f84e6d",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "bpguide <1335966938@qq.com>",
+      "messages": [],
+      "total_additions": 2028,
+      "total_deletions": 168,
+      "accepted_lines": 2028,
+      "overriden_lines": 0
+    }
+  }
+}
