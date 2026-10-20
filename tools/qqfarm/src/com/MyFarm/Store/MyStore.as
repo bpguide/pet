@@ -23,8 +23,6 @@ package com.MyFarm.Store
       
       private var box:DisplayBox;
       
-      private var interval:Number = 20;
-      
       private var stage:Stage;
       
       private var showBox:ShowBox;
@@ -169,17 +167,12 @@ package com.MyFarm.Store
       private function getXML(param1:XML) : void
       {
          var _loc2_:Number = Number(NaN);
-         var _loc3_:uint = 0;
-         var _loc4_:uint = 0;
          var _loc5_:uint = 0;
          var _loc6_:MovieClip = null;
          currentXML = param1;
          _loc2_ = myBox.tab1.y + myBox.tab1.height + margins;
          myBox.scrollBar.y = _loc2_;
          container.y = 0;
-         // The shop reopens from scale 0.2 (TitleControl.showShop) and refresh() lays it out on the first frame of that
-         // tween: count columns on the unscaled width, or the shrunken box fits none and every item lands on one row.
-         _loc3_ = uint(Math.max(1,int((myBox.width / (myBox.scaleX > 0 ? myBox.scaleX : 1) - margins * 2) / (50 + interval))));
          var order:Array = new Array();
          var gray:Array = [new ColorMatrixFilter([0.3,0.59,0.11,0,0,0.3,0.59,0.11,0,0,0.3,0.59,0.11,0,0,0,0,0,0.5,0])];
          var k:uint = 0;
@@ -217,19 +210,43 @@ package com.MyFarm.Store
             {
                box.filters = gray;
             }
-            box.x = (box.width + interval) * _loc4_ + margins;
-            box.y = _loc2_;
-            _loc4_++;
-            if((_loc5_ + 1) % _loc3_ == 0)
-            {
-               _loc2_ += box.height + margins;
-               _loc4_ = 0;
-            }
             container.addChild(box);
             _loc5_++;
          }
+         layoutItems(_loc2_);
          container.addEventListener(MouseEvent.CLICK,clickHandler);
          myBox.scrollBar.effectObject = "container";
+      }
+
+      private function layoutItems(top:Number) : void
+      {
+         var cellWidth:Number = 50;
+         var cellHeight:Number = 0;
+         var i:uint = 0;
+         var item:DisplayObject = null;
+         while(i < container.numChildren)
+         {
+            item = container.getChildAt(i);
+            item.scaleX = 1;
+            item.scaleY = 1;
+            cellWidth = Math.max(cellWidth,item.width);
+            cellHeight = Math.max(cellHeight,item.height);
+            i++;
+         }
+         // Keep five equal slots inside the fixed viewport, including prices wider than their icons.
+         var columns:uint = 5;
+         var slotWidth:Number = (myBox.scrollBar.width - margins) / columns;
+         var scale:Number = Math.min(1,(slotWidth - 4) / cellWidth);
+         i = 0;
+         while(i < container.numChildren)
+         {
+            item = container.getChildAt(i);
+            item.scaleX = scale;
+            item.scaleY = scale;
+            item.x = myBox.scrollBar.x + margins / 2 + (i % columns) * slotWidth + (slotWidth - item.width) / 2;
+            item.y = top + int(i / columns) * (cellHeight * scale + margins);
+            i++;
+         }
       }
       
       private function bought(param1:String, param2:Number) : void

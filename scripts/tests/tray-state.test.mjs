@@ -12,6 +12,7 @@ function statePanel(focused = false) {
   const timers = new Map()
   let nextTimer = 0
   let cursor = () => {}
+  let trayLeave = () => {}
   const element = (className, ...children) => {
     const el = {
       className, style: {}, dataset: {}, children: [],
@@ -32,7 +33,7 @@ function statePanel(focused = false) {
   const source = stripTypeScriptTypes(readFileSync(new URL('../../src/renderer/ui/state.ts', import.meta.url), 'utf8'))
     .replace(/^import .*$/gm, '').replace(/^export /gm, '')
   const ui = runInNewContext(source + '\n;({ openState, closeState })', {
-    window: { addEventListener: events.addEventListener.bind(events), qqpet: { setFocusable: on => focus.push(on), onCursor: l => { cursor = l } } },
+    window: { addEventListener: events.addEventListener.bind(events), qqpet: { setFocusable: on => focus.push(on), onCursor: l => { cursor = l }, onTrayHoverLeave: l => { trayLeave = l } } },
     setTimeout: (f, ms) => { timers.set(++nextTimer, { f, ms }); return nextTimer }, clearTimeout: id => timers.delete(id),
     document: { body, hasFocus: () => focused }, innerWidth: 1920, innerHeight: 1080,
     div: element, img: element,
@@ -44,7 +45,7 @@ function statePanel(focused = false) {
     touch: false, mouseDrag: (el, touch) => drags.push([el, touch]),
   })
   const elapse = () => { const due = [...timers.values()]; timers.clear(); for (const t of due) t.f() }
-  return { ...ui, body, drags, focus, profiles, timers, elapse, move: (x, y) => cursor({ x, y }), blur: () => events.dispatchEvent(new Event('blur')) }
+  return { ...ui, body, drags, focus, profiles, timers, elapse, move: (x, y) => cursor({ x, y }), leaveTray: () => trayLeave(), blur: () => events.dispatchEvent(new Event('blur')) }
 }
 
 test('the tray status panel takes focus and hides on window blur; closing is idempotent', () => {
@@ -88,26 +89,54 @@ test('closing status keeps the focus another panel (chat, setup...) already hold
   assert.deepEqual(ui.focus, [])
 })
 
-test('a Windows tray status panel closes after 3s unless the cursor enters it (#41)', () => {
+test('Windows tray focus closes on blur even when DOM focus was already true', () => {
+  const ui = statePanel(true)
+  const app = renderer(144, undefined, null, 'Egg', { ui })
+  app.save.havePet = true
+  app.trayClick({ kind: 'state', x: 800, y: 0, autoClose: true, focusTaken: true })
+  assert.equal(ui.body.children.length, 1)
+  assert.deepEqual(ui.focus, [], 'native tray handler already activated the window')
+  app.trayClick({ kind: 'state', x: 800, y: 0, autoClose: true, focusTaken: false })
+  assert.equal(ui.body.children.length, 1)
+  ui.blur()
+  assert.equal(ui.body.children.length, 0)
+  assert.deepEqual(ui.focus, [false], 'the reopened panel still releases its native focus')
+})
+
+test('a Windows tray status panel closes 0.5s after the cursor leaves it (#41)', () => {
   const ui = statePanel()
   ui.openState(800, 0, true)
-  assert.deepEqual([...ui.timers.values()].map(t => t.ms), [3000])
+  assert.equal(ui.timers.size, 0) // 打开不再倒计时：悬停托盘期间保持展开
+  ui.move(800, 100)
+  assert.equal(ui.timers.size, 0)
+  ui.move(1200, 600)
+  assert.deepEqual([...ui.timers.values()].map(t => t.ms), [500])
   ui.elapse()
   assert.equal(ui.body.children.length, 0)
 })
 
-test('entering cancels the auto-close, leaving restarts the full 3s, re-entering cancels again', () => {
+test('entering cancels the auto-close, leaving restarts 0.5s, re-entering cancels again', () => {
   const ui = statePanel()
   ui.openState(800, 0, true)
   ui.move(800, 100)
   assert.equal(ui.timers.size, 0)
   ui.move(1200, 600)
-  assert.deepEqual([...ui.timers.values()].map(t => t.ms), [3000])
+  assert.deepEqual([...ui.timers.values()].map(t => t.ms), [500])
   ui.move(750, 50)
   assert.equal(ui.timers.size, 0)
   ui.elapse()
   assert.equal(ui.body.children.length, 1)
   ui.move(1200, 600)
+  ui.elapse()
+  assert.equal(ui.body.children.length, 0)
+})
+
+test('leaving the tray icon starts the auto-close when the cursor never entered the panel', () => {
+  const ui = statePanel()
+  ui.openState(800, 0, true)
+  assert.equal(ui.timers.size, 0)
+  ui.leaveTray()
+  assert.deepEqual([...ui.timers.values()].map(t => t.ms), [500])
   ui.elapse()
   assert.equal(ui.body.children.length, 0)
 })

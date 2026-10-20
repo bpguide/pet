@@ -1,5 +1,5 @@
 import { machine, speak } from '../pet/pet'
-import { addInfo, busy, info, petSize, playingDesk, refreshTray, save, setDeskGame, setInfo, setTray, stage } from '../pet/store'
+import { busy, earnYb, info, petSize, playingDesk, refreshTray, save, setDeskGame, setInfo, setTray, stage } from '../pet/store'
 import { addCount } from '../pet/tasks'
 import './css/smallgame.css'
 import { button } from './dom'
@@ -35,7 +35,7 @@ function land(tossed: boolean): void {
   if (!tossed) return
   const mood = Math.min(55, save.petComputedlInfo.moodMax - info.mood)
   setInfo('mood', info.mood + mood)
-  addInfo('yb', 1)
+  earnYb(1)
 }
 
 function step(now: number): void {

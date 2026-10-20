@@ -1,6 +1,7 @@
 import { description } from '../../../package.json'
 import { APP_VERSION } from '../../shared/version'
 import { DEFAULT_HOTKEY, hotkeyLabel } from '../../shared/hotkey'
+import { forgetMemory } from './chat'
 import { allGoods, type GoodType } from '../pet/data/goods'
 import { give } from '../pet/items'
 import { applyPetSound, speak } from '../pet/pet'
@@ -24,6 +25,43 @@ type Option = { label: string; title?: string } & (
   | { type: 'see'; value: string; run?: () => void }
   | { type: 'input'; value: () => string; set: (v: string) => void }
 )
+
+function webhookUrl(): string {
+  return `http://127.0.0.1:${save.settings.webhookPort}/hook?token=${save.settings.webhookToken}`
+}
+
+function toggleWebhook(): void {
+  const s = save.settings
+  if (s.webhook) return update('settings', { webhook: false })
+  update('settings', { webhook: true, webhookToken: s.webhookToken || crypto.randomUUID().replace(/-/g, '') })
+  // The server binds a moment later; say so when the port is taken.
+  window.setTimeout(() => {
+    void window.qqpet.webhookState?.().then((r) => {
+      if (r.error) windowView({ title: 'Webhook', msg: `启动失败：${r.error}，请换一个端口。` })
+    })
+  }, 600)
+}
+
+function webhookOptions(): Option[] {
+  const s = save.settings
+  const copy = (text: string, done: string): void => void navigator.clipboard.writeText(text).then(() => windowView({ title: 'Webhook', msg: done }))
+  const opts: Option[] = [
+    {
+      type: 'radio',
+      label: 'Webhook：接收外部消息（默认关）',
+      title: '在本机 127.0.0.1 开一个 HTTP 接口，外部服务 POST 过来的消息会由宠物念出来，可带链接，点「打开链接」跳转。仅本机可访问，必须带 token；免打扰时不弹。',
+      on: () => s.webhook,
+      run: toggleWebhook,
+    },
+  ]
+  if (!s.webhook) return opts
+  return [
+    ...opts,
+    { type: 'input', label: 'Webhook 端口（1024-65535，改后立即生效）', value: () => String(s.webhookPort), set: (v) => { const n = Math.trunc(Number(v)); if (n >= 1024 && n <= 65535) update('settings', { webhookPort: n }) } },
+    { type: 'button', label: '复制 Webhook 地址', title: webhookUrl(), run: () => copy(webhookUrl(), '地址已复制。POST JSON：{"text":"内容","title":"标题","url":"https://…","duration":30}，duration 为停留秒数（0=点击前一直显示）。') },
+    { type: 'button', label: '重置 Webhook token', title: '旧地址立即失效', run: () => { update('settings', { webhookToken: crypto.randomUUID().replace(/-/g, '') }); windowView({ title: 'Webhook', msg: 'token 已重置，请重新复制地址。' }) } },
+  ]
+}
 
 function setOpacity(v: number): void {
   const o = Math.round(Math.min(Math.max(v, 0.1), 1) * 10) / 10
@@ -220,6 +258,12 @@ const aiOptions = (): Option[] => [
   ...models.map((m): Option => ({ type: 'radio', label: m, on: () => s.aiModel === m, run: () => void testModel(m) })),
   { type: 'see', label: '状态', value: aiStatus || (s.aiModel ? `已启用：${s.aiModel}` : '未启用') },
   ...(s.aiModel ? [{ type: 'button' as const, label: '关闭 AI', run: closeAi }] : []),
+  // 联网搜索是 AI 能力的一部分，放 AI 设置里
+  { type: 'radio', label: '联网搜索（问它"查一下"时联网搜）', title: '聊天时它需要查证或实时信息，会先联网搜再据实回答；都搜不到就老实说没搜到。', on: () => s.search, run: () => update('settings', { search: !s.search }) },
+  { type: 'radio', label: '搜索后端：免 key（DuckDuckGo→Bing 兜底）', title: '不需要任何 key，开箱即用；但可能被限流、结果质量一般。', on: () => s.searchBackend === 'auto', run: () => update('settings', { searchBackend: 'auto' }) },
+  { type: 'radio', label: '搜索后端：Tavily', title: '正规搜索 API，质量高、稳定，需在下方填 API Key。', on: () => s.searchBackend === 'tavily', run: () => update('settings', { searchBackend: 'tavily' }) },
+  { type: 'radio', label: '搜索后端：Brave', title: 'Brave 搜索 API，需在下方填 API Key。', on: () => s.searchBackend === 'brave', run: () => update('settings', { searchBackend: 'brave' }) },
+  { type: 'input', label: '搜索 API Key（免 key 模式留空）', value: () => s.searchKey, set: (v) => update('settings', { searchKey: v.trim() }) },
 ]
 
 const FACE_TIP = '使用互动动作：鼠标放入宠物范围0.3s后（手机上点一下宠物），开启点位可进行点击~'
@@ -252,6 +296,13 @@ const TABS: { label: string; options: Option[] }[] = [
           run: () => setFaceClick(s.faceClick ? 0 : 1),
         },
         { type: 'radio', label: '是否开启互动动作指示器', title: FACE_TIP, on: () => s.faceClick === 2, run: () => setFaceClick(s.faceClick === 2 ? 1 : 2) },
+        {
+          type: 'radio',
+          label: '标准难度（元宝收入降为 40%，默认关=轻松）',
+          title: '轻松：保持现有的元宝收入；标准：打工、小游戏、钓鱼、农场、邮件礼物等收入只有 40%（至少 1），物价不变。作弊获得的不受影响。',
+          on: () => s.difficulty === 'standard',
+          run: () => update('settings', { difficulty: s.difficulty === 'standard' ? 'easy' : 'standard' }),
+        },
         { type: 'radio', label: '开启免打扰模式', on: () => s.quiet, run: () => update('settings', { quiet: !s.quiet }) },
         {
           type: 'radio',
@@ -268,6 +319,7 @@ const TABS: { label: string; options: Option[] }[] = [
           on: () => s.lan,
           run: () => update('settings', { lan: !s.lan }),
         },
+        ...(window.qqpet.onWebhook ? webhookOptions() : []),
         {
           type: 'radio',
           label: '语音对话',
@@ -278,6 +330,20 @@ const TABS: { label: string; options: Option[] }[] = [
         { type: 'see', label: '说话键', value: `${hotkeyLabel(DEFAULT_HOTKEY)}后按住说话` },
         {
           type: 'radio',
+          label: '对话记忆（重启后仍记得你说过的话）',
+          title: '记忆存在本地 memory.md 与 chat-history.json，可随时清除；关闭后既不学习也不使用记忆。',
+          on: () => s.memory,
+          run: () => update('settings', { memory: !s.memory }),
+        },
+        {
+          type: 'radio',
+          label: '台词润色（关 = 原版台词原汁原味）',
+          title: '开启时闲置闲聊由 AI 发挥、日常台词经 AI 润色；关闭后全部念原版台词库。聊天对话不受影响。',
+          on: () => s.polish,
+          run: () => update('settings', { polish: !s.polish }),
+        },
+        {
+          type: 'radio',
           label: '开启宠物音效（贴边探头、点脸逗它）',
           title: '关掉只是宠物不出声：贴边探头的「嘿嘿嘿」、点脸逗它的语音等。企鹅岛社区的背景音乐不受影响，游戏窗口自己的音效也不受影响。',
           on: () => s.sound,
@@ -285,6 +351,13 @@ const TABS: { label: string; options: Option[] }[] = [
             update('settings', { sound: !s.sound })
             applyPetSound()
           },
+        },
+        {
+          type: 'slider',
+          label: `社区音量：${Math.round(s.music * 100)}%（0静音）`,
+          title: '调整企鹅岛社区的背景音乐和音效，立即生效并自动保存。',
+          value: () => s.music,
+          step: (d) => update('settings', { music: Math.round(Math.min(1, Math.max(0, s.music + d)) * 10) / 10 }),
         },
         { type: 'radio', label: '开启高清画质', title: '高清托盘图标与窗口边框，新打开的窗口生效；高清界面素材重启后生效', on: () => s.hd, run: () => setHd(!s.hd) },
       ]
@@ -295,6 +368,16 @@ const TABS: { label: string; options: Option[] }[] = [
     options: [
       { type: 'button', label: '导出存档', title: '把当前宠物保存成一个文件，可用于备份或换电脑', run: exportSave },
       { type: 'button', label: '导入存档（支持原版 config.json）', title: '用存档文件替换当前宠物，导入后自动重启', run: importSave },
+      {
+        type: 'button',
+        label: '清除宠物的记忆',
+        title: '清空 memory.md 里的长期记忆；对话历史一并清除',
+        run: () => {
+          forgetMemory()
+          void window.qqpet.memHistory?.([])
+          speak({ s: '[host]，我把以前的事都忘掉啦~', now: true, ai: false }, 'speak')
+        },
+      },
     ],
   },
   ...(window.qqpet.packs

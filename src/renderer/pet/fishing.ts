@@ -1,6 +1,6 @@
 import { windowView } from '../ui/window-view'
 import FRIES from './data/fries.json'
-import { addInfo, info, save, setInfo, update } from './store'
+import { earnYb, info, save, setInfo, update } from './store'
 
 const HOUR = 3600
 const FEED_PRICE = 10
@@ -169,7 +169,7 @@ function harvest(id: number): Reply {
   const yb = f && (ripe(f) ? f.YB * f.quantity : Math.floor(f.costyb / 2))
   if (!yb) return ERROR
   pond.fishs.splice(i, 1)
-  addInfo('yb', yb)
+  earnYb(yb)
   if (ripe(f)) harvested(1)
   store()
   return { result: 0, yb, msg: '收获成功!', growth: 0, strong: 0, charm: 0, iq: 0 }
@@ -196,7 +196,7 @@ function harvestAll(): Reply {
   const yb = sold.reduce((s, f) => s + f.YB * f.quantity, 0)
   if (!yb) return { result: 5, msg: '收获失败，当前没有成熟的🐟~' }
   pond.fishs = pond.fishs.filter((f) => !ripe(f))
-  addInfo('yb', yb)
+  earnYb(yb)
   harvested(sold.length)
   store()
   return { result: 6, msg: '收获成功!' }

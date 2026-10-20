@@ -95,11 +95,16 @@ export function openFishing(): void {
   }
   window.close_game = (n) => {
     if (n !== 1) return
-    remove()
-    window.alert = alert
-    window.confirm = confirm
-    window.before_pay = beforePay
-    open = false
+    // The SWF owns the current call. Removing its player now leaves the Ruffle instance alive and still
+    // focused, swallowing every key typed elsewhere; dispose it after ExternalInterface returns.
+    setTimeout(() => {
+      if (!host.isConnected) return
+      remove()
+      window.alert = alert
+      window.confirm = confirm
+      window.before_pay = beforePay
+      open = false
+    })
   }
 
   void player.load('pet/fishing/main.swf')

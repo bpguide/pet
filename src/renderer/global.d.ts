@@ -49,6 +49,8 @@ declare global {
     suspend(): void
     addFSCommandHandler(handler: (command: string, args: string) => void): void
     callExternalInterface(name: string, ...args: unknown[]): unknown
+    /** Receives the movie's trace() lines; covers the loaded movie only. */
+    set traceObserver(observer: ((message: string) => void) | null)
     readonly isPlaying: boolean
     readonly metadata: RuffleMetadata | null
   }

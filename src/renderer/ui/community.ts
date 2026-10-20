@@ -1,5 +1,5 @@
 import { askAs } from '../pet/ai'
-import { info, save, update } from '../pet/store'
+import { info, onSettingsChange, save, update } from '../pet/store'
 import { SwfPlayer } from '../swf/player'
 import { openBox } from './box'
 import './css/community.css'
@@ -591,7 +591,12 @@ export function openCommunity(): void {
   said.length = 0
   const stage = div('community')
   player = new SwfPlayer(stage)
+  player.setVolume(save.settings.music)
+  const stopSettings = onSettingsChange((change) => {
+    if ('music' in change) player?.setVolume(save.settings.music)
+  })
   window.qqpet.setFocusable(true)
+  window.qqpet.setAlwaysOnTop(false)
   // Panels opened from the island (钓鱼, 档案, 设置...) make the window unfocusable again when they close.
   stage.addEventListener('pointerdown', () => window.qqpet.setFocusable(true), true)
   const route = (_id: unknown, x1: unknown, y1: unknown, x2: unknown, y2: unknown): { x: number; y: number }[] =>
@@ -648,7 +653,8 @@ export function openCommunity(): void {
       kick()
       return n
     },
-    GetSoundVolume: () => Math.round(save.settings.music * 100),
+    // The player controls all community audio; scaling inside Flash as well would square the volume.
+    GetSoundVolume: () => 100,
     GetWindowBreState: () => 0,
     IsScenePrepare: () => 1,
     GetZoomServerList: (region) => {
@@ -737,6 +743,7 @@ export function openCommunity(): void {
 
   openBox(div('ui-community', stage), {
     onClose: () => {
+      stopSettings()
       clearInterval(wander)
       player?.destroy()
       player = null
@@ -744,6 +751,7 @@ export function openCommunity(): void {
       clearTimeout(resFlush)
       resFlush = 0
       busy = false
+      window.qqpet.setAlwaysOnTop(true)
       window.qqpet.setFocusable(false)
       jump = null
       open = false

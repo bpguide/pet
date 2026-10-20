@@ -14,7 +14,7 @@ import { loot } from './loot'
 import { mailPhoto } from './mail'
 import { speak } from './pet'
 import { rand } from './rand'
-import { activity, addInfo, info, luck, save, setInfo, update } from './store'
+import { activity, earnYb, info, luck, save, setInfo, update } from './store'
 import { addCount } from './tasks'
 
 export { PROVINCES }
@@ -102,7 +102,7 @@ const workTask = (g: Good): Task => ({
   key: 'work',
   minutes: g.useTime!,
   end: () => {
-    addInfo('yb', g.yb!)
+    earnYb(g.yb!)
     apply(g)
     addCount('Work')
     speak({ c: 'state', s: 'overWork', now: true }, 'speak')

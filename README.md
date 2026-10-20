@@ -33,6 +33,8 @@ QQ 宠物跨平台复刻（Windows / macOS / Linux / Android / HarmonyOS / iOS�
 - **任务与邮件**：今日任务（按宠物需求和节假日生成）、逗逗我、学习打工、旅游任务；签到与图鉴；节日、生日、旅行明信片邮件。
 - **活动**：池塘（养鱼）、农场（QQFarm，金币即元宝）、密室探险、6 类 101 个小游戏（独立窗口，按游戏时长奖励）。
 - **AI（可选）**：接入任意 OpenAI 兼容接口，宠物闲聊、改写台词、点评或翻译剪贴板文字。
+- **难度**：设置里可切换「标准难度」，打工、小游戏、钓鱼、农场、邮件礼物等元宝收入降为 40%（至少 1），物价不变；默认「轻松」保持原有收入。
+- **Webhook（桌面版）**：设置里开启后，在本机 `127.0.0.1:17788` 提供接口，外部服务发来的消息由宠物念出来，可带链接，点「打开链接」跳转。默认关闭，仅本机可访问，必须带 token，免打扰时不弹。用法见下方「Webhook」。
 - **其他**：天气播报、节日问候、免打扰、透明度、开机自启、全屏应用（看视频、玩游戏）在前台时自动隐藏宠物、高清画质（重绘的 @2x 素材，适配高分屏，重启后生效）、存档导入导出（兼容原版 `config.json`，首次启动的选蛋页也可直接导入）。
 
 存档位于 `userData/save.json`，导入时旧存档备份为 `save.json.bak`。
@@ -89,7 +91,7 @@ GitHub Actions 打 `v*` 标签时产出未签名 HAP 并放进 Release。和桌�
 | Windows | `QQPet.Setup.<版本>.exe` |
 | macOS（Apple 芯片） | `QQPet-<版本>-arm64.dmg` |
 | macOS（Intel） | `QQPet-<版本>.dmg` |
-| Linux | `QQPet-<版本>.AppImage` 或 `qqpet_<版本>_amd64.deb` |
+| Linux | `QQPet-<版本>.AppImage` 或 `qqpet_<版本>_amd64.deb`（ARM64：`QQPet-<版本>-arm64.AppImage` 或 `qqpet_<版本>_arm64.deb`） |
 | Android（11 及以上） | `QQPet-<版本>.apk` |
 | HarmonyOS（5 及以上） | `QQPet-<版本>.hap` |
 | iOS（需 TrollStore 或越狱） | `QQPet-<版本>-ios.ipa` |
@@ -97,7 +99,7 @@ GitHub Actions 打 `v*` 标签时产出未签名 HAP 并放进 Release。和桌�
 桌面端有两种安装包：
 
 - **完整版**（上表的文件，约 450–520 MB）：自带宠物内容，装好即用。不确定选哪个就下这个。
-- **精简版**（文件名带 `Lite`，约 120–160 MB）：Windows `QQPet-Lite-Setup-<版本>-x64.exe`，macOS `QQPet-Lite-<版本>-arm64.dmg` / `QQPet-Lite-<版本>-x64.dmg`，Linux `QQPet-Lite-<版本>-x86_64.AppImage` / `QQPet-Lite-<版本>-amd64.deb`。不带宠物内容，首次启动会弹出窗口：直接下载最新的完整内容包（约 360 MB，可填 GitHub 加速镜像，下载后按发布页公布的 SHA-256 校验），或导入已经下载好的 `QQPet-content-<版本>.qqpetpack`，完成后自动启动宠物。适合网络不稳、想分开下载或已经有内容包的情况。
+- **精简版**（文件名带 `Lite`，约 120–160 MB）：Windows `QQPet-Lite-Setup-<版本>-x64.exe`，macOS `QQPet-Lite-<版本>-arm64.dmg` / `QQPet-Lite-<版本>-x64.dmg`，Linux `QQPet-Lite-<版本>-x86_64.AppImage` / `QQPet-Lite-<版本>-amd64.deb`（ARM64 为 `-arm64.AppImage` / `-arm64.deb`）。不带宠物内容，首次启动会弹出窗口：直接下载最新的完整内容包（约 360 MB，可填 GitHub 加速镜像，下载后按发布页公布的 SHA-256 校验），或导入已经下载好的 `QQPet-content-<版本>.qqpetpack`，完成后自动启动宠物。适合网络不稳、想分开下载或已经有内容包的情况。
 
 两种安装包可以互相覆盖安装，导入/下载过的内容包会保留。以后升级程序时，宠物素材没有变化的话精简版不用重新下载内容。
 
@@ -115,6 +117,21 @@ GitHub Actions 打 `v*` 标签时产出未签名 HAP 并放进 Release。和桌�
 - **Android**：在浏览器或文件管理器中打开 APK，按提示允许「安装未知应用」。
 - **HarmonyOS**：下载 HAP 后用 hdc 安装（需开发者模式）：`hdc install QQPet-*.hap`。未签名，不能走应用市场那套安装。
 - **iOS**：通过 TrollStore 或保留所需权限的越狱 App 安装器安装 IPA；安装器需保留 IPA 内的 entitlement。权限与使用方式见 [iOS 使用说明](ios/README.md)。
+
+## Webhook（桌面版）
+
+设置里打开「Webhook：接收外部消息」后，会在 `http://127.0.0.1:17788/hook` 监听（端口可改）。点「复制 Webhook 地址」得到带 token 的完整地址；「重置 Webhook token」会让旧地址立即失效。
+
+```sh
+curl -X POST 'http://127.0.0.1:17788/hook?token=<token>' \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"构建完成","title":"CI","url":"https://example.com/run/1","duration":30}'
+```
+
+- `text`（必填）、`title`、`url`（仅 http/https，气泡出现「打开链接」按钮）、`duration`（气泡停留秒数，默认 30，`0` = 点击前一直显示，最大 3600）。
+- 也可用 GET / 表单 / 纯文本请求体；token 还可放在 `Authorization: Bearer` 或 `X-Token` 头里。
+- 只监听本机；请求体最大 16 KB，每分钟最多 30 次；多条消息排队，后一条最多 10 秒后接替前一条；免打扰时丢弃。
+- 手机版不提供。
 
 ## 征集素材
 

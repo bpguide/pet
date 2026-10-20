@@ -2,7 +2,7 @@ import type { CalendarDay } from '../../shared/ipc'
 import { isBuddy, type Shot } from './album'
 import { allGoods, goodOf, type Good } from './data/goods'
 import { rand } from './rand'
-import { info, save, update } from './store'
+import { info, save, scaleYb, update } from './store'
 
 /** saveJsonData.email entries, keyed by `d` (unix seconds); a deleted mail keeps only its keys. */
 export interface Live {
@@ -42,7 +42,7 @@ function slot(mails: Record<string, Mail>): number {
 function send(mails: Record<string, Mail>, k: string, l: string, yb: number, m: string): boolean {
   if (Object.values(mails).some((x) => x.k === k)) return false
   const d = slot(mails)
-  mails[d] = { d, k, l, m, glb: [...some('food', 3), ...some('toy', 2), goodOf('nums', 'yb', yb)] }
+  mails[d] = { d, k, l, m, glb: [...some('food', 3), ...some('toy', 2), goodOf('nums', 'yb', scaleYb(yb))] }
   return true
 }
 

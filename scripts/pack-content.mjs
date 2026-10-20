@@ -29,6 +29,13 @@ mkdirSync(out, { recursive: true })
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 1 << 26 })
 const LFS = Buffer.from('version https://git-lfs')
 
+// A stable release must not be based on its own beta (same x.y.z, so the pack would not be newer): use the previous stable tag.
+const core = (v) => v.replace(/^v/, '').split(/[-+]/)[0]
+if (a.base && /-/.test(a.base) && !/-/.test(version) && core(a.base) === core(version)) {
+  a.base = git('describe', '--tags', '--abbrev=0', '--exclude=*-*', `${a.base}^`).trim()
+  console.log(`stable ${version}: base moved to ${a.base}`)
+}
+
 const read = (path) => {
   const data = readFileSync(join(root, path))
   if (data.subarray(0, LFS.length).equals(LFS)) throw new Error(`${path} is a Git LFS pointer; run git lfs pull`)

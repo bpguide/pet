@@ -99,10 +99,12 @@ package com.MyFarm.control
       
       private function showBoxClose(param1:MouseEvent = null) : void
       {
+         face._stage.removeEventListener(Event.ENTER_FRAME,stepperEnterFrame);
          showBox.stepper.removeEventListener(Event.CHANGE,stepperChange);
          showBox.cancel.removeEventListener(MouseEvent.CLICK,showBoxClose);
          showBox.close_btn.removeEventListener(MouseEvent.CLICK,showBoxClose);
          showBox.stepper.textField.removeEventListener(TextEvent.TEXT_INPUT,stepperInputHandler);
+         showBox.stepper.textField.removeEventListener(Event.CHANGE,stepperInputHandler);
          face._stage.removeChild(showBox);
          photo = null;
          showBox = null;
@@ -153,9 +155,9 @@ package com.MyFarm.control
          var _loc2_:int = 0;
          var _loc3_:int = 0;
          var _loc4_:String = null;
-         _loc2_ = int(showBox.total_txt.text.slice(0,showBox.total_txt.text.indexOf("元")));
+         _loc3_ = saleQuantity();
+         _loc2_ = _loc3_ * int(face._user.warehouse[num].price);
          face._user.wealth = String(int(face._user.wealth) + _loc2_);
-         _loc3_ = int(int(showBox.total_txt.text.slice(0,showBox.total_txt.text.indexOf("元"))) / int(showBox.price_txt.text.slice(0,showBox.price_txt.text.indexOf("元"))));
          face._user.warehouse[num].number = int(face._user.warehouse[num].number) - _loc3_;
          _loc4_ = face._user.warehouse[num].name;
          if(face._user.warehouse[num].number < 1)
@@ -169,7 +171,10 @@ package com.MyFarm.control
          face._stage.addChild(tipBox);
          tipBox.x = face._warehouse.x + (face._warehouse.width - tipBox.width) / 2;
          tipBox.y = face._warehouse.y + (face._warehouse.height - tipBox.height) / 2;
-         tipBox.num_txt.text = _loc3_;
+         tipBox.num_txt.wordWrap = false;
+         tipBox.num_txt.multiline = false;
+         tipBox.num_txt.autoSize = "right";
+         tipBox.num_txt.text = String(_loc3_);
          tipBox.num_txt.mouseEnabled = false;
          tipBox.name_txt.text = _loc4_;
          tipBox.name_txt.mouseEnabled = false;
@@ -183,7 +188,7 @@ package com.MyFarm.control
          }
       }
       
-      private function stepperInputHandler(param1:TextEvent) : void
+      private function stepperInputHandler(param1:Event) : void
       {
          face._stage.addEventListener(Event.ENTER_FRAME,stepperEnterFrame);
       }
@@ -274,12 +279,16 @@ package com.MyFarm.control
             showBox.x = face._warehouse.x + (face._warehouse.width - showBox.width) / 2;
             showBox.y = face._warehouse.y + (face._warehouse.height - showBox.height) / 2;
             showBox.price_txt.text = face._user.warehouse[num].price + "元宝";
-            showBox.stepper.value = face._user.warehouse[num].number;
+            // Set the real limit before the value; the symbol's default maximum is only 99.
+            showBox.stepper.maximum = int(face._user.warehouse[num].number);
+            showBox.stepper.value = showBox.stepper.maximum;
+            showBox.stepper.x = 20;
+            showBox.stepper.width = 90;
             showBox.stepper.textField.restrict = "0-9";
-            showBox.stepper.textField.maxChars = 3;
+            showBox.stepper.textField.maxChars = String(showBox.stepper.maximum).length;
+            showBox.txt.autoSize = "left";
             showBox.txt.text = "输入卖出数量(1-" + face._user.warehouse[num].number + ")";
-            showBox.stepper.maximum = face._user.warehouse[num].number;
-            showBox.total_txt.text = int(face._user.warehouse[num].number) * int(face._user.warehouse[num].price) + "元宝";
+            stepperChange(null);
             showBox.title_txt.text = face._user.warehouse[num].name;
             photo = face.getChild(face._user.warehouse[num].fruit);
             showBox.addChild(photo);
@@ -289,13 +298,24 @@ package com.MyFarm.control
             showBox.cancel.addEventListener(MouseEvent.CLICK,showBoxClose);
             showBox.stepper.addEventListener(Event.CHANGE,stepperChange);
             showBox.stepper.textField.addEventListener(TextEvent.TEXT_INPUT,stepperInputHandler);
+            showBox.stepper.textField.addEventListener(Event.CHANGE,stepperInputHandler);
             showBox.define.addEventListener(MouseEvent.CLICK,soldHandler);
          }
       }
       
       private function stepperChange(param1:Event) : void
       {
-         showBox.total_txt.text = int(showBox.stepper.value) * int(showBox.price_txt.text.slice(0,showBox.price_txt.text.indexOf("元"))) + "元宝";
+         showBox.total_txt.text = saleQuantity() * int(face._user.warehouse[num].price) + "元宝";
+      }
+
+      private function saleQuantity() : int
+      {
+         var count:Number = Number(showBox.stepper.textField.text);
+         if(isNaN(count))
+         {
+            count = 1;
+         }
+         return int(Math.max(1,Math.min(int(face._user.warehouse[num].number),count)));
       }
       
       private function soldAllHandler(param1:MouseEvent) : void
@@ -348,19 +368,12 @@ package com.MyFarm.control
       
       private function stepperEnterFrame(param1:Event) : void
       {
-         if(showBox.stepper.textField.text == "")
+         var count:int = saleQuantity();
+         if(showBox.stepper.textField.text == "" || count != Number(showBox.stepper.textField.text))
          {
-            showBox.stepper.value = 1;
-            showBox.total_txt.text = int(showBox.stepper.value) * int(showBox.price_txt.text.slice(0,showBox.price_txt.text.indexOf("元"))) + "元宝";
+            showBox.stepper.textField.text = String(count);
          }
-         else
-         {
-            if(int(showBox.stepper.textField.text) > showBox.stepper.maximum)
-            {
-               showBox.stepper.textField.text = showBox.stepper.maximum;
-            }
-            showBox.total_txt.text = int(showBox.stepper.textField.text) * int(showBox.price_txt.text.slice(0,showBox.price_txt.text.indexOf("元"))) + "元宝";
-         }
+         stepperChange(null);
          face._stage.removeEventListener(Event.ENTER_FRAME,stepperEnterFrame);
       }
    }

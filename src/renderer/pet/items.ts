@@ -4,6 +4,7 @@ import { goodOf, type Good, type TimedType } from './data/goods'
 import { DEAD, illOf } from './data/ills'
 import { addGood, hasGood, startTimed, takeGood } from './goods'
 import { speak } from './pet'
+import { emitEvent } from './said'
 import { activity, addInfo, info, save, setInfo } from './store'
 import { addCount, type Counter } from './tasks'
 
@@ -40,6 +41,16 @@ const DAILY: Record<TimedType, { c: string; action: string; extra: number; pause
   background: { c: 'pay', action: 'speak', extra: 0 },
 }
 
+/** 用掉东西是发生在它身上的事，旁白入账——聊天里它才"知道"自己洗过澡、吃过药。 */
+const HAPPENED: Record<string, (n: string) => string> = {
+  food: (n) => `主人喂你吃了${n}`,
+  clean: (n) => `主人用${n}给你洗了澡`,
+  medicine: (n) => `主人给你喂了药（${n}）`,
+  toy: (n) => `主人陪你玩了${n}`,
+  background: (n) => `主人给你换上了${n}`,
+}
+const happened = (g: Good): void => emitEvent((HAPPENED[g.type] ?? ((n: string) => `主人给你用了${n}`))(g.name))
+
 /** Uses a food/clean/toy good without any words, for time the pet spent unattended. */
 export function useItemQuietly(g: Good): void {
   const d = DAILY[g.type as TimedType]
@@ -67,18 +78,27 @@ export function useItem(g: Good, free = false, text?: string): void {
       goods: [g],
       max: g.num,
       ok: (close, n) => {
-        if (takeGood(g, n)) setInfo(key, Math.max(info[key] + n * g.value!, 0))
+        if (takeGood(g, n)) {
+          happened(g)
+          setInfo(key, Math.max(info[key] + n * g.value!, 0))
+        }
         close()
       },
     })
   }
-  if (g.type === 'medicine') return medicine(g, take)
+  if (g.type === 'medicine')
+    return medicine(g, () => {
+      const ok = take()
+      if (ok) happened(g)
+      return ok
+    })
 
   const d = DAILY[g.type as TimedType]
   if (save.settings.paused && d.paused) return speak({ s: `[host],我暂停成长拉！无法${d.paused}~~`, now: true }, 'speak')
   speak(text ? { s: text, now: true } : { c: d.c, s: g.type, now: true }, d.action, {
     start: () => {
       if (!take()) return
+      happened(g)
       if (g.useTimeing) startTimed(g as Good & { type: TimedType })
       apply(g, d.extra)
       if (d.task) addCount(d.task)

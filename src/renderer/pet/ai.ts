@@ -1,5 +1,5 @@
 import type { AiMessage } from '../../shared/ipc'
-import { dayText } from './calendar'
+import { dayText, festivalExhausted } from './calendar'
 import { info, save } from './store'
 
 /** A model is saved only once it passed the settings test. */
@@ -27,6 +27,7 @@ function persona(): string {
     `你是QQ宠物里的一只${info.sex === 'GG' ? '男生' : '女生'}小企鹅，名叫「${info.name}」，${c.level}级，主人叫「${info.host}」。`,
     `你现在的状态：饱食${pct(info.hunger, c.hungerMax)}，清洁${pct(info.clean, c.cleanMax)}，心情${pct(info.mood, c.moodMax)}，健康${info.health}/5。`,
     `现在是${now.getMonth() + 1}月${now.getDate()}日${now.getHours()}点${now.getMinutes()}分，${dayText()}。`,
+    festivalExhausted() ? '今天已经跟主人提过节日了，别再主动提节日、也别重复节日祝福。' : '',
     today.length ? `今天刚发生：${today.join('；')}。` : '',
     STYLE,
   ]
@@ -63,10 +64,14 @@ export async function askAs(who: string, messages: AiMessage[]): Promise<string 
   return line && !LOOP.test(line) ? line : null
 }
 
+/** 用干净的系统提示词调用模型——不套企鹅人设/STYLE，给记忆提炼这类"非角色扮演"任务用；返回整段（上限 500 字）。 */
+export async function askClean(system: string, messages: AiMessage[]): Promise<string | null> {
+  return (await chat(system, messages))?.slice(0, 500) || null
+}
+
 /** By default the line is only reworded; `how` can ask for more, e.g. small talk around it. */
 const REWORD =
   '下面这句话是你对主人说的，句中的「我」就是你自己。用你的口吻把它重新说一遍。原句里的时间、天气、数字、物品和要做的事都必须保留，不能改也不能编新内容；只输出改写后的那句话，不要解释。原句：'
-
 /** Small talk while idle, starting from one of the original lines. */
 export const IDLE =
   '主人在旁边忙，没有说话。结合你现在的状态、时间和日期，以及今天刚发生的事，主动对主人说一句话；只输出这句话，不要解释。可以参考这句：'

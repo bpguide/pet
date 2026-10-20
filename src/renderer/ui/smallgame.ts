@@ -1,5 +1,5 @@
 import { speak } from '../pet/pet'
-import { addInfo, busy, info, playingDesk, refreshTray, save, setDeskGame, setInfo, setTray, stage } from '../pet/store'
+import { busy, earnYb, info, playingDesk, refreshTray, save, setDeskGame, setInfo, setTray, stage } from '../pet/store'
 import { addCount } from '../pet/tasks'
 import { SwfPlayer } from '../swf/player'
 import './css/smallgame.css'
@@ -97,8 +97,8 @@ function finish(): void {
 function reward(w: Win): void {
   const mood = Math.min(REWARD.mood, save.petComputedlInfo.moodMax - info.mood)
   setInfo('mood', info.mood + mood)
-  addInfo('yb', REWARD.yb)
-  call(w, 'TICKLE_OnResult', [mood, REWARD.yb])
+  const yb = earnYb(REWARD.yb)
+  call(w, 'TICKLE_OnResult', [mood, yb])
 }
 
 /** The "API" object one window's SWF sees; a missing window name means the caller. */

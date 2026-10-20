@@ -1,4 +1,5 @@
 import { info, petSize, save } from '../pet/store'
+import { emitReply } from '../pet/said'
 import { SwfPlayer } from '../swf/player'
 
 const W = 261
@@ -40,7 +41,10 @@ const expire = (): void => {
 /** Called by talk.swf; button i runs actions[i]. */
 window.BubbleAPI = {
   OnButtonClick: (i) => {
+    // 点按钮 = 主人开口回话，入账成对话里的用户发言
+    const label = labels[i] ?? ''
     hide()
+    if (label) emitReply(label)
     actions[i]?.()
   },
 }
@@ -68,8 +72,8 @@ function place(): void {
   el.style.top = `${top}px`
 }
 
-/** A `sticky` bubble stays until a button is clicked or another bubble replaces it. */
-export async function say(text: string, buttons: string[], onButton: (() => void)[] = [], sticky = false): Promise<void> {
+/** `ms` is how long the bubble stays; 0 keeps it until a button is clicked. */
+export async function say(text: string, buttons: string[], onButton: (() => void)[] = [], ms = SHOW_MS): Promise<void> {
   actions = onButton
   shown = text
   labels = buttons
@@ -82,7 +86,7 @@ export async function say(text: string, buttons: string[], onButton: (() => void
   el.style.visibility = 'visible'
   speak(text, buttons)
   clearTimeout(hideTimer)
-  if (!sticky) hideTimer = window.setTimeout(expire, SHOW_MS)
+  if (ms > 0) hideTimer = window.setTimeout(expire, ms)
 }
 
 /** Swaps the text of a bubble still showing `from`, keeping its buttons; `say` must have finished. */

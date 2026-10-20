@@ -74,6 +74,14 @@ export function setInfo<K extends keyof PetInfo>(key: K, value: PetInfo[K]): voi
   for (const l of listeners) l(key, prev)
 }
 
+/** 元宝 income of a normal source; standard difficulty pays 40%, at least 1. Cheats and refunds use addInfo. */
+export const scaleYb = (n: number): number => (n > 0 && save.settings.difficulty === 'standard' ? Math.max(1, Math.round(n * 0.4)) : n)
+export const earnYb = (n: number): number => {
+  const got = scaleYb(n)
+  setInfo('yb', info.yb + got)
+  return got
+}
+
 export const addInfo = (key: NumKey, delta: number): void => setInfo(key, info[key] + delta)
 
 type Activity = 'work' | 'study' | 'trip' | 'ill' | 'die'

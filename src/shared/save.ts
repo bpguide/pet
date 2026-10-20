@@ -87,7 +87,7 @@ export interface GameSaveDatas {
 export interface Settings {
   /** Pet, control bar and window opacity, 0..1. */
   opacity: number
-  /** 企鹅岛社区 music volume, 0..1. The desktop itself plays no BGM, like the original. */
+  /** 企鹅岛社区 master volume (music and effects), 0..1; 0 mutes the community. */
   music: number
   /**
    * Pet voices: the edge-peek 嘿嘿嘿 and the face-poke lines. Only the pet is muted;
@@ -119,10 +119,27 @@ export interface Settings {
   agentNotify: boolean
   /** Those bubbles stay until clicked instead of fading after a few seconds. */
   agentSticky: boolean
+  /** Local webhook: external services POST to 127.0.0.1:webhookPort/hook?token=… and the pet speaks it. Desktop only; off by default. */
+  webhook: boolean
+  webhookPort: number
+  /** Shared secret of the webhook; made when the webhook is first switched on. */
+  webhookToken: string
   /** The talk key (double-tap left Alt, then hold) feeds local speech-to-text. */
   voice: boolean
+  /** 对话记忆：跨重启记得主人说过的话，事实存本地 memory.md。 */
+  memory: boolean
+  /** 台词润色：闲聊/问候经 AI 改写；关闭则原版台词原样念。 */
+  polish: boolean
+  /** 联网搜索：聊天需要查证/实时信息时，先联网搜再据实回答。 */
+  search: boolean
+  /** 搜索后端：auto=免 key（DDG→Bing 兜底），tavily/brave=自填 key 的正规 API。 */
+  searchBackend: 'auto' | 'tavily' | 'brave'
+  /** 搜索 API Key（后端选 tavily/brave 时用；免 key 模式留空）。 */
+  searchKey: string
   /** Pressing the pet shows the action bar. On by default. */
   petBar: boolean
+  /** easy: 元宝 income as is (default); standard: income scaled down (see `earnYb`). */
+  difficulty: 'easy' | 'standard'
   /** Chat cheats (元宝+N, 不要死, ...) are recognised. On by default. */
   chatCheat: boolean
   /** The settings' 作弊 tab is shown; tapping the version 5 times toggles it. Off by default. */

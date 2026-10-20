@@ -1,5 +1,6 @@
 import type { ShapeRect } from './hit-shape'
 import type { LanPeer } from './lan'
+import type { WebhookMsg } from './webhook'
 import type { SaveData, SavePatch, Sex } from './save'
 
 export const IPC = {
@@ -13,6 +14,7 @@ export const IPC = {
   gamePlayed: 'game:played',
   aiModels: 'ai:models',
   aiChat: 'ai:chat',
+  webSearch: 'web:search',
   weather: 'app:weather',
   latestRelease: 'app:latest-release',
   packInfo: 'pack:info',
@@ -38,13 +40,23 @@ export const IPC = {
   cursor: 'win:cursor',
   setDragging: 'win:set-dragging',
   trayClick: 'tray:click',
+  trayHoverLeave: 'tray:hover-leave',
   trayMenu: 'tray:menu',
   trayMenuAction: 'tray:menu-action',
   lanOnline: 'lan:online',
   lanOffline: 'lan:offline',
   lanMessage: 'lan:message',
+  webhook: 'webhook:message',
+  webhookState: 'webhook:state',
   lanSend: 'lan:send',
   lanPeers: 'lan:peers',
+  memLoad: 'mem:load',
+  memFacts: 'mem:facts',
+  memHistory: 'mem:history',
+  memClear: 'mem:clear',
+  memRewrite: 'mem:rewrite',
+  memDialogueLoad: 'mem:dialogue-load',
+  memDialogueSave: 'mem:dialogue-save',
   voiceStart: 'voice:start',
   voiceStop: 'voice:stop',
   voiceText: 'voice:text',
@@ -99,6 +111,8 @@ export interface TrayClick {
   y?: number
   /** Windows tray left click: the status panel closes by itself unless the cursor stays on it (#41). */
   autoClose?: boolean
+  /** Windows: the tray made the native window focusable for this panel. */
+  focusTaken?: boolean
 }
 
 /** Data only; menu actions stay in the renderer. */
@@ -180,6 +194,13 @@ export interface PackApi {
 
 export type Fetch = (url: string, init?: RequestInit) => Promise<Response>
 
+/** One keyless web-search hit. */
+export interface SearchResult {
+  title: string
+  url: string
+  description: string
+}
+
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -221,6 +242,8 @@ export interface QQPetApi {
   aiModels(c: Omit<AiConfig, 'model'>): Promise<string[]>
   /** The reply's text; rejects with the server's error. */
   aiChat(c: AiConfig, messages: AiMessage[]): Promise<string>
+  /** Keyless web search (DuckDuckGo); [] while offline or on failure. */
+  webSearch(query: string): Promise<SearchResult[]>
   /** An empty city locates by IP; rejects for an unknown city or while offline. */
   weather(city: string): Promise<Weather>
   /** Rejects while offline. */
@@ -248,6 +271,8 @@ export interface QQPetApi {
   /** Cursor position in window coordinates, pushed ~30 times per second. */
   onCursor(listener: (p: DesktopCursor) => void): void
   onTrayClick(listener: (e: TrayClick) => void): void
+  /** 托盘悬浮结束（鼠标离开托盘图标）；档案据此开始收起倒计时。 */
+  onTrayHoverLeave?(listener: () => void): void
   /** A game window closed after `minutes` of play. */
   onGamePlayed(listener: (minutes: number) => void): void
   /** New clipboard text, while the clip setting is on. */
@@ -262,10 +287,22 @@ export interface QQPetApi {
   onLanOffline?(listener: (peer: LanPeer) => void): void
   /** A message body from a linked pet (visits and deliveries ride on this). */
   onLanMessage?(listener: (fromId: string, body: unknown) => void): void
+  /** An external service called the local webhook. Absent off the desktop. */
+  onWebhook?(listener: (m: WebhookMsg) => void): void
+  /** Whether the webhook is listening; `error` says why not (port taken, ...). */
+  webhookState?(): Promise<{ running: boolean; error?: string }>
   /** Sends to one pet; a `visit` to an offline pet is queued and returns 'queued'. */
   lanSend?(toId: string, body: unknown): Promise<'sent' | 'queued'>
   /** Peers already online; events fired before the renderer loaded are missed otherwise. */
   lanPeers?(): Promise<LanPeer[]>
+  /** 对话记忆三件套：读取 / 提炼事实 / 保存历史 / 清空。 */
+  memLoad?(): Promise<{ memory: string[]; history: { role: 'user' | 'assistant' | 'system'; content: string }[] }>
+  memFacts?(lines: string[]): void
+  memHistory?(turns: { role: 'user' | 'assistant' | 'system'; content: string }[]): void
+  memClear?(): void
+  memRewrite?(lines: string[]): void
+  memDialogueLoad?(): Promise<{ dialogue: AiMessage[]; sinceMemo: number }>
+  memDialogueSave?(state: { dialogue: AiMessage[]; sinceMemo: number }): void
   /** Push one recorded utterance (16 kHz mono, -1..1) for transcription. */
   voiceAudio?(samples: Float32Array): void
   /** The talk key went down: start recording. */

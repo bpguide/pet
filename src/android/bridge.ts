@@ -3,6 +3,7 @@
 // pass touches through transparent pixels, so everything outside the window
 // reaches the apps below.
 import { aiChat, aiModels } from '../shared/ai'
+import { webSearch } from '../shared/websearch'
 import { calendar } from '../shared/calendar'
 import { abortReason, cloneJson } from '../shared/compat'
 import { cover } from '../mobile/overlay'
@@ -240,6 +241,7 @@ const api: QQPetApi = {
   calendar: () => calendar(nativeFetch),
   aiModels: (c) => aiModels(nativeFetch, c),
   aiChat: (c, messages) => aiChat(nativeFetch, c, messages),
+  webSearch: (query) => webSearch(nativeFetch, query),
   weather: (city) => weather(nativeFetch, city),
   latestRelease: () => latestRelease(nativeFetch),
   quit: () => native.quit(),

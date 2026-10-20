@@ -16,6 +16,7 @@ const api: QQPetApi = {
   calendar: () => ipcRenderer.invoke(IPC.calendar),
   aiModels: (c) => ipcRenderer.invoke(IPC.aiModels, c),
   aiChat: (c, messages) => ipcRenderer.invoke(IPC.aiChat, c, messages),
+  webSearch: (query) => ipcRenderer.invoke(IPC.webSearch, query),
   weather: (city) => ipcRenderer.invoke(IPC.weather, city),
   latestRelease: () => ipcRenderer.invoke(IPC.latestRelease),
   packs: {
@@ -47,6 +48,10 @@ const api: QQPetApi = {
   setDragging: (on) => ipcRenderer.invoke(IPC.setDragging, on),
   onCursor: (listener) => ipcRenderer.on(IPC.cursor, (_e, p) => listener(p)),
   onTrayClick: (listener) => ipcRenderer.on(IPC.trayClick, (_e, c) => listener(c)),
+  onTrayHoverLeave: (listener) => {
+    ipcRenderer.removeAllListeners(IPC.trayHoverLeave)
+    ipcRenderer.on(IPC.trayHoverLeave, () => listener())
+  },
   onGamePlayed: (listener) => ipcRenderer.on(IPC.gamePlayed, (_e, m) => listener(m)),
   onClipboard: (listener) => ipcRenderer.on(IPC.clipboard, (_e, text) => listener(text)),
   onPresence: (listener) => ipcRenderer.on(IPC.presence, (_e, away) => listener(away)),
@@ -64,8 +69,20 @@ const api: QQPetApi = {
     ipcRenderer.removeAllListeners(IPC.lanMessage)
     ipcRenderer.on(IPC.lanMessage, (_e, fromId, body) => listener(fromId, body))
   },
+  onWebhook: (listener) => {
+    ipcRenderer.removeAllListeners(IPC.webhook)
+    ipcRenderer.on(IPC.webhook, (_e, m) => listener(m))
+  },
+  webhookState: () => ipcRenderer.invoke(IPC.webhookState),
   lanSend: (toId, body) => ipcRenderer.invoke(IPC.lanSend, toId, body),
   lanPeers: () => ipcRenderer.invoke(IPC.lanPeers),
+  memLoad: () => ipcRenderer.invoke(IPC.memLoad),
+  memFacts: (lines) => ipcRenderer.send(IPC.memFacts, lines),
+  memRewrite: (lines) => ipcRenderer.send(IPC.memRewrite, lines),
+  memDialogueLoad: () => ipcRenderer.invoke(IPC.memDialogueLoad),
+  memDialogueSave: (state) => ipcRenderer.send(IPC.memDialogueSave, state),
+  memHistory: (turns) => ipcRenderer.send(IPC.memHistory, turns),
+  memClear: () => ipcRenderer.send(IPC.memClear),
   voiceAudio: (samples) => ipcRenderer.send(IPC.voiceAudio, samples),
   voicePart: (samples) => ipcRenderer.send(IPC.voicePart, samples),
   onVoicePartial: (listener) => {

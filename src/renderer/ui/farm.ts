@@ -1,4 +1,4 @@
-import { avatar, info, onSaveFlush, save, setInfo, update } from '../pet/store'
+import { avatar, info, onSaveFlush, save, scaleYb, setInfo, update } from '../pet/store'
 import { SwfPlayer } from '../swf/player'
 import { readSol, writeSol, type Sol } from '../swf/sol'
 import { openBox } from './box'
@@ -68,7 +68,8 @@ export function openFarm(): void {
     const user = readSol(KEY)!.user as Sol
     const w = Number(user.wealth)
     // The SWF only knows the yb it started with; spending elsewhere meanwhile can overdraw.
-    setInfo('yb', Math.max(0, info.yb + w - last))
+    const d = w - last
+    setInfo('yb', Math.max(0, info.yb + (d > 0 ? scaleYb(d) : d)))
     last = w
     update('saveJsonData', { farm: JSON.stringify(user) })
   }
@@ -91,6 +92,7 @@ export function openFarm(): void {
     button('fcc wsnw act', all('care'), '一键照料'),
     button('fcc wsnw act', all('clear'), '一键铲除'),
     button('fcc wsnw act', all('plant'), '一键播种'),
+    button('fcc wsnw act', async () => void (await player.callback('farmView'))(), '全景/原尺寸'),
   )
   window.qqpet.setFocusable(true)
   openBox(div('ui-farm', host, actions), {

@@ -2,6 +2,7 @@ import { app, clipboard, dialog, ipcMain, net, powerMonitor, session, shell } fr
 import { IPC, type TrayMenuItem, type TrayState } from '../shared/ipc'
 import type { SavePatch, Sex } from '../shared/save'
 import { aiChat, aiModels } from '../shared/ai'
+import { webSearch } from '../shared/websearch'
 import { calendar } from '../shared/calendar'
 import { latestRelease } from '../shared/update'
 import { toShape, type ShapeRect } from '../shared/hit-shape'
@@ -15,7 +16,9 @@ import { createPetTray } from './tray'
 import { frontName } from './front'
 import { createPetWindow, openGameWindow } from './window'
 import { LanNode, persistedLanId } from './lan'
+import { WebhookServer } from './webhook'
 import { VisitQueue } from './visit-queue'
+import { addFacts, clearMemory, loadDialogueState, loadHistory, loadMemory, rewriteFacts, saveDialogueState, saveHistory, type HistoryTurn } from './memory'
 import { DEFAULT_HOTKEY, parseHotkey, watchHotkey, type KeyWatcher } from './hotkey'
 import { preloadAsr, transcribe } from './asr'
 import { startAgent, stopAgent } from './agent'
@@ -96,6 +99,22 @@ app.whenReady().then(() => {
     return 'sent' as const
   })
   ipcMain.handle(IPC.lanPeers, () => lan.peersList())
+  // 对话记忆：渲染层的模型负责提炼，这里只当忠实的本地保管员
+  ipcMain.handle(IPC.memLoad, () => ({ memory: loadMemory(), history: loadHistory() }))
+  ipcMain.on(IPC.memFacts, (_e, lines: string[]) => {
+    if (Array.isArray(lines)) addFacts(lines)
+  })
+  ipcMain.on(IPC.memRewrite, (_e, lines: string[]) => {
+    if (Array.isArray(lines)) rewriteFacts(lines)
+  })
+  ipcMain.handle(IPC.memDialogueLoad, () => loadDialogueState())
+  ipcMain.on(IPC.memDialogueSave, (_e, state) => {
+    if (state && Array.isArray(state.dialogue)) saveDialogueState(state)
+  })
+  ipcMain.on(IPC.memHistory, (_e, turns: HistoryTurn[]) => {
+    if (Array.isArray(turns)) saveHistory(turns)
+  })
+  ipcMain.on(IPC.memClear, () => clearMemory())
   // 语音：说话键（双击左Alt后按住）→ 渲染层录音 → 本地识别 → 聊天管线
   ipcMain.on(IPC.voiceAudio, (_e, samples: Float32Array) => {
     void transcribe(samples)
@@ -146,15 +165,39 @@ app.whenReady().then(() => {
     void lan.start().catch((e) => console.error('lan start failed:', e))
   }
   startLan()
+  let webhookError: string | undefined
+  const webhook = new WebhookServer((m) => win.webContents.send(IPC.webhook, m))
+  const syncWebhook = (): void => {
+    const s = getSave().settings
+    webhook.stop()
+    webhookError = undefined
+    if (!s.webhook || !s.webhookToken || !getSave().havePet) return
+    webhook.start(s.webhookPort, s.webhookToken).catch((e: NodeJS.ErrnoException) => {
+      webhookError = e.code === 'EADDRINUSE' ? `端口 ${s.webhookPort} 已被占用` : String(e.message)
+      console.error('webhook start failed:', e)
+    })
+  }
+  syncWebhook()
+  ipcMain.handle(IPC.webhookState, () => ({ running: webhook.running, error: webhookError }))
   const tray = createPetTray((click) => {
+    let focusTaken = false
+    if (process.platform === 'win32' && click.kind === 'state' && getSave().havePet) {
+      focusTaken = !win.isFocusable()
+      if (focusTaken) win.setFocusable(true)
+      win.focus()
+    }
     const b = win.getBounds()
     const z = getSave().settings.zoom
-    win.webContents.send(IPC.trayClick, click.x === undefined ? click : { ...click, x: (click.x - b.x) / z, y: (click.y! - b.y) / z })
+    const message = { ...click, focusTaken }
+    win.webContents.send(IPC.trayClick, click.x === undefined ? message : { ...message, x: (click.x - b.x) / z, y: (click.y! - b.y) / z })
+  }, () => {
+    if (!win.isDestroyed()) win.webContents.send(IPC.trayHoverLeave)
   })
   app.on('before-quit', () => {
     tray.destroy()
     lan.stop()
     stopAgent()
+    webhook.stop()
   })
   ipcMain.on(IPC.trayMenu, (event, items: TrayMenuItem[]) => {
     if (event.sender !== win.webContents) return
@@ -191,6 +234,8 @@ app.whenReady().then(() => {
         lanOn = false
       }
     }
+    const hook = patch.settings
+    if (hook && (hook.webhook !== undefined || hook.webhookPort !== undefined || hook.webhookToken !== undefined)) syncWebhook()
     if (patch.settings?.voice !== undefined) (patch.settings.voice ? startVoice : stopVoice)()
     if (patch.settings?.agentNotify !== undefined) watchAgent(patch.settings.agentNotify)
   })
@@ -214,6 +259,7 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC.calendar, () => calendar(net.fetch))
   ipcMain.handle(IPC.aiModels, (_e, c) => aiModels(net.fetch, c))
   ipcMain.handle(IPC.aiChat, (_e, c, messages) => aiChat(net.fetch, c, messages))
+  ipcMain.handle(IPC.webSearch, (_e, query: string) => webSearch(net.fetch, query, 6, getSave().settings.searchBackend, getSave().settings.searchKey))
   ipcMain.handle(IPC.weather, (_e, city: string) => weather(net.fetch, city))
   ipcMain.handle(IPC.latestRelease, () => latestRelease(net.fetch))
   // A focusable pet window holds a full panel (社区, 密室...) that would cover a normal game window.
@@ -233,12 +279,17 @@ app.whenReady().then(() => {
     const { width, height } = win.getContentBounds()
     win.setShape(toShape(rects, win.webContents.getZoomFactor(), width, height))
   })
-  ipcMain.on(IPC.setAlwaysOnTop, (_e, on: boolean) => win.setAlwaysOnTop(on, 'screen-saver'))
+  // Panels that stay open for long (社区) lower the window so other apps can be raised over it.
+  let lowered = false
+  ipcMain.on(IPC.setAlwaysOnTop, (_e, on: boolean) => {
+    lowered = !on
+    win.setAlwaysOnTop(on, 'screen-saver')
+  })
   ipcMain.on(IPC.setFocusable, (_e, on: boolean) => {
     panel = on
     win.setFocusable(on)
     // macOS draws IME candidates below screen-saver level; drop under them while a panel takes typing.
-    if (process.platform === 'darwin') win.setAlwaysOnTop(true, on ? 'floating' : 'screen-saver')
+    if (process.platform === 'darwin') win.setAlwaysOnTop(!lowered, on ? 'floating' : 'screen-saver')
     // The window is born unfocusable; setFocusable alone does not make it key, so IME stays on the previous app.
     if (on) {
       if (process.platform === 'darwin') app.focus({ steal: true })

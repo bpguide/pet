@@ -159,9 +159,10 @@ function render(): void {
 let ownsFocus = false
 
 /** A panel opened from the Windows tray closes this long after the cursor last left it, or never came (#41). */
-const AUTO_CLOSE_MS = 3000
+const AUTO_CLOSE_MS = 500
 let autoClose = false
 let hovered = false
+let entered = false
 let closing: ReturnType<typeof setTimeout> | undefined
 const countdown = (): void => {
   clearTimeout(closing)
@@ -175,14 +176,22 @@ window.qqpet.onCursor?.((p) => {
   const inside = p.x >= r.left && p.x < r.right && p.y >= r.top && p.y < r.bottom
   if (inside === hovered) return
   hovered = inside
-  if (inside) clearTimeout(closing)
-  else countdown()
+  if (inside) {
+    entered = true
+    clearTimeout(closing)
+  } else if (entered) countdown()
+})
+
+// 悬停托盘离开时开始计时；鼠标已进档案则交给档案自身的离开逻辑
+window.qqpet.onTrayHoverLeave?.(() => {
+  if (!panel || !autoClose) return
+  if (!hovered) countdown()
 })
 
 export function closeState(): void {
   clearTimeout(closing)
   closing = undefined
-  autoClose = hovered = false
+  autoClose = hovered = entered = false
   if (!panel) return
   panel.parentElement!.remove()
   panel = null
@@ -193,7 +202,9 @@ export function closeState(): void {
 window.addEventListener('blur', closeState)
 
 /** Opens the status panel from tray point (x, y), toward the screen's middle. */
-export function openState(x: number, y: number, closesItself = false): void {
+export function openState(x: number, y: number, closesItself = false, focusTaken = false): void {
+  const keepFocus = ownsFocus
+  if (panel) ownsFocus = false
   closeState()
   panel = div('PetStateInfo focusPress')
   panel.dataset.hit = ''
@@ -205,13 +216,15 @@ export function openState(x: number, y: number, closesItself = false): void {
   // Dragged like the pet info window (#53).
   mouseDrag(panel, touch)
   render()
-  // Focus lets a click elsewhere blur the window and close the panel.
-  if (!document.hasFocus()) {
+  // Windows may report DOM focus even when the native overlay is unfocusable.
+  // The tray activates it first so an outside click can produce a real blur.
+  if (focusTaken || keepFocus) ownsFocus = true
+  else if (!document.hasFocus()) {
     ownsFocus = true
     window.qqpet.setFocusable(true)
   }
   autoClose = closesItself
-  if (autoClose) countdown()
+  entered = false
 }
 
 let queued = 0

@@ -1,6 +1,6 @@
 import GAMES from '../pet/data/games.json'
 import { speak } from '../pet/pet'
-import { addInfo, growthPerMinute, info, save, setInfo } from '../pet/store'
+import { addInfo, earnYb, growthPerMinute, info, save, setInfo } from '../pet/store'
 import { addCount, count } from '../pet/tasks'
 import { openBox } from './box'
 import './css/games.css'
@@ -20,11 +20,11 @@ window.qqpet.onGamePlayed((minutes) => {
   const m = Math.min(Math.floor(minutes), DAY_MINUTES - count('Game'))
   if (m <= 0) return speak({ s: '[host]，今天小游戏玩得够多啦，休息一下眼睛吧~', now: true }, 'speak')
   addCount('Game', m)
-  addInfo('yb', 5 * m)
+  const got = earnYb(5 * m)
   addInfo('growth', +(growthPerMinute() * m).toFixed(8))
   setInfo('mood', Math.min(info.mood + 2 * m, save.petComputedlInfo.moodMax))
   void floatMood(2 * m)
-  speak({ s: `[host]，陪我玩了${m}分钟小游戏，好开心！获得${5 * m}元宝~`, now: true }, 'speak')
+  speak({ s: `[host]，陪我玩了${m}分钟小游戏，好开心！获得${got}元宝~`, now: true }, 'speak')
 })
 
 /** Game picker: the desktop games play with the pet, the rest open in their own window. */

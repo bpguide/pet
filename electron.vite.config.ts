@@ -24,6 +24,8 @@ export default defineConfig({
   },
   renderer: {
     root: 'src/renderer',
+    // Keep the dev server and Electron on the same loopback address on Windows.
+    server: { host: '127.0.0.1' },
     // resources/ holds pet/ (235MB). Served as-is in dev, shipped via
     // extraResources in production, never copied into the renderer bundle.
     publicDir: resolve('resources'),

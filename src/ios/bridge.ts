@@ -1,4 +1,5 @@
 import { aiChat, aiModels } from '../shared/ai'
+import { webSearch } from '../shared/websearch'
 import { calendar } from '../shared/calendar'
 import { cloneJson } from '../shared/compat'
 import type { Fetch, Point, QQPetApi, TrayClick, TrayState } from '../shared/ipc'
@@ -409,6 +410,7 @@ const api: QQPetApi = {
   calendar: () => calendar(nativeFetch),
   aiModels: (config) => aiModels(nativeFetch, config),
   aiChat: (config, messages) => aiChat(nativeFetch, config, messages),
+  webSearch: (query) => webSearch(nativeFetch, query),
   weather: (city) => weather(nativeFetch, city),
   latestRelease: () => latestRelease(nativeFetch),
   quit() {

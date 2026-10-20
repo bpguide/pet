@@ -196,11 +196,12 @@ package com.MyFarm.Store.view
       
       private function endComplete() : void
       {
-         if(img != null)
+         // Closing can interrupt the opening tween before beginComplete attaches the preview.
+         if(img != null && img.parent == mc)
          {
             mc.removeChild(img);
          }
-         else if(displayObject != null)
+         else if(displayObject != null && displayObject.parent == mc)
          {
             mc.removeChild(displayObject);
          }
